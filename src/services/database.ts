@@ -226,3 +226,79 @@ export class DatabaseService {
 
 // Instância singleton
 export const db = DatabaseService.getInstance();
+
+// Funções de conveniência para adicionar entidades
+export const addCategoria = async (categoria: Omit<Categoria, 'id' | 'created_at' | 'updated_at'>): Promise<Categoria> => {
+  return await db.createCategoria(categoria);
+};
+
+export const addDespesa = async (despesa: Omit<Despesa, 'id' | 'created_at' | 'updated_at'>): Promise<Despesa> => {
+  return await db.createDespesa(despesa);
+};
+
+export const addReceita = async (receita: Omit<Receita, 'id' | 'created_at' | 'updated_at'>): Promise<Receita> => {
+  return await db.createReceita(receita);
+};
+
+export const addFornecedor = async (fornecedor: Omit<Fornecedor, 'id' | 'created_at' | 'updated_at'>): Promise<Fornecedor> => {
+  return await db.createFornecedor(fornecedor);
+};
+
+export const addContaBancaria = async (conta: Omit<ContaBancaria, 'id' | 'created_at' | 'updated_at'>): Promise<ContaBancaria> => {
+  return await db.createContaBancaria(conta);
+};
+
+export const addPagamento = async (pagamento: Omit<Pagamento, 'id' | 'created_at'>): Promise<Pagamento> => {
+  return await db.createPagamento(pagamento);
+};
+
+// Funções de conveniência para buscar entidades
+export const getCategorias = async (): Promise<Categoria[]> => {
+  return await db.getCategorias();
+};
+
+export const getDespesas = async (): Promise<Despesa[]> => {
+  return await db.getDespesas();
+};
+
+export const getReceitas = async (): Promise<Receita[]> => {
+  return await db.getReceitas();
+};
+
+export const getFornecedores = async (): Promise<Fornecedor[]> => {
+  return await db.getFornecedores();
+};
+
+// Funções de conveniência para atualizar entidades
+export const updateCategoria = async (id: string, categoria: Partial<Categoria>): Promise<Categoria> => {
+  return await db.updateCategoria(id, categoria);
+};
+
+export const updateDespesa = async (id: string, despesa: Partial<Despesa>): Promise<Despesa> => {
+  return await db.updateDespesa(id, despesa);
+};
+
+export const updateReceita = async (id: string, receita: Partial<Receita>): Promise<Receita> => {
+  return await db.updateReceita(id, receita);
+};
+
+export const updateFornecedor = async (id: string, fornecedor: Partial<Fornecedor>): Promise<Fornecedor> => {
+  return await db.updateFornecedor(id, fornecedor);
+};
+
+// Funções de conveniência para deletar entidades
+export const deleteCategoria = async (id: string): Promise<void> => {
+  return await db.deleteCategoria(id);
+};
+
+export const deleteDespesa = async (id: string): Promise<void> => {
+  return await db.deleteDespesa(id);
+};
+
+export const deleteReceita = async (id: string): Promise<void> => {
+  return await db.deleteReceita(id);
+};
+
+export const deleteFornecedor = async (id: string): Promise<void> => {
+  return await db.deleteFornecedor(id);
+};
