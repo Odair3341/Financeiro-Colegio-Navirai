@@ -1,9 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DatabaseConfig } from '../components/DatabaseConfig';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Database, CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { neonDB } from '@/services/neonAPI';
+import { useHybridData } from '@/hooks/useNeonData';
 
 const ConfiguracaoBanco: React.FC = () => {
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected'>('unknown');
+  const { toast } = useToast();
+  const { isOnline, categorias, despesas, receitas, reloadAll } = useHybridData();
+
+  useEffect(() => {
+    // Testa conexão na inicialização
+    testConnection();
+  }, []);
+
+  const testConnection = async () => {
+    setIsTestingConnection(true);
+    try {
+      const isConnected = await neonDB.testConnection();
+      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+      
+      if (isConnected) {
+        toast({
+          title: "✅ Conectado ao Neon!",
+          description: "Sua aplicação está conectada ao banco PostgreSQL"
+        });
+        reloadAll(); // Recarrega dados do Neon
+      } else {
+        toast({
+          title: "⚠️ Sem conexão com Neon",
+          description: "Usando dados locais (localStorage)",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setConnectionStatus('disconnected');
+      toast({
+        title: "❌ Erro de conexão",
+        description: "Não foi possível conectar com o Neon",
+        variant: "destructive"
+      });
+    } finally {
+      setIsTestingConnection(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="container mx-auto px-4 py-8">
@@ -25,6 +72,92 @@ const ConfiguracaoBanco: React.FC = () => {
               Configure a integração com o Neon PostgreSQL e gerencie seus dados financeiros.
             </p>
           </div>
+        </div>
+
+        {/* Status da Conexão */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Status da Conexão com Neon
+              </CardTitle>
+              <CardDescription>
+                Verifique se sua aplicação está conectada ao banco PostgreSQL do Neon
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {connectionStatus === 'connected' && (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                      <Badge variant="default" className="bg-green-100 text-green-800">
+                        🟢 Conectado ao Neon
+                      </Badge>
+                    </>
+                  )}
+                  {connectionStatus === 'disconnected' && (
+                    <>
+                      <XCircle className="h-5 w-5 text-red-500" />
+                      <Badge variant="destructive">
+                        🔴 Usando localStorage
+                      </Badge>
+                    </>
+                  )}
+                  {connectionStatus === 'unknown' && (
+                    <>
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                      <Badge variant="secondary">
+                        🔄 Verificando...
+                      </Badge>
+                    </>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={testConnection} 
+                  disabled={isTestingConnection}
+                  variant="outline"
+                  size="sm"
+                >
+                  {isTestingConnection ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  )}
+                  Testar Conexão
+                </Button>
+              </div>
+
+              {/* Informações dos Dados */}
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{categorias.categorias?.length || 0}</div>
+                  <div className="text-sm text-muted-foreground">Categorias</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{despesas.despesas?.length || 0}</div>
+                  <div className="text-sm text-muted-foreground">Despesas</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{receitas.receitas?.length || 0}</div>
+                  <div className="text-sm text-muted-foreground">Receitas</div>
+                </div>
+              </div>
+
+              {/* Informações técnicas */}
+              <div className="bg-muted p-4 rounded-lg">
+                <h4 className="font-medium mb-2">Informações da Conexão:</h4>
+                <div className="text-sm space-y-1">
+                  <div>🗄️ <strong>Banco:</strong> {isOnline ? 'Neon PostgreSQL' : 'localStorage (offline)'}</div>
+                  <div>🌐 <strong>Projeto:</strong> {import.meta.env.VITE_NEON_PROJECT_ID || 'não configurado'}</div>
+                  <div>📊 <strong>Database:</strong> {import.meta.env.VITE_NEON_DATABASE || 'neondb'}</div>
+                  <div>⚡ <strong>Status:</strong> {isOnline ? 'Online' : 'Modo fallback'}</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Configuração do Banco */}
