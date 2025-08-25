@@ -34,19 +34,11 @@ interface ModalRecebimentoProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-<<<<<<< HEAD
   despesa?: Despesa; // Dados da despesa específica (opcional)
 }
 
 export function ModalRecebimento({ isOpen, onClose, onSuccess, despesa }: ModalRecebimentoProps) {
   const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([]);
-=======
-  despesa?: any; // Dados da despesa específica (opcional)
-}
-
-export function ModalRecebimento({ isOpen, onClose, onSuccess, despesa }: ModalRecebimentoProps) {
-  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   const { toast } = useToast();
 
   const form = useForm<RecebimentoFormData>({
@@ -74,11 +66,7 @@ export function ModalRecebimento({ isOpen, onClose, onSuccess, despesa }: ModalR
         numeroDocumento: "",
       });
     }
-<<<<<<< HEAD
   }, [isOpen, form, despesa]);
-=======
-  }, [isOpen, form]);
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   const onSubmit = async (data: RecebimentoFormData) => {
     try {

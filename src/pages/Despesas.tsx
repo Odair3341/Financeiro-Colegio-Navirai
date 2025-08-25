@@ -1,12 +1,6 @@
-<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-=======
-
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { 
@@ -27,10 +21,6 @@ import {
 } from "lucide-react";
 import { financialDataService } from "@/services/financialData";
 import { ModalBaixaDespesa } from "@/components/ModalBaixaDespesa";
-<<<<<<< HEAD
-
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { formatDateBR } from "@/lib/dateUtils";
 import ModalLancamentoRapido from "@/components/ModalLancamentoRapido";
 
@@ -43,26 +33,7 @@ const Despesas = () => {
   const [filtroConciliacao, setFiltroConciliacao] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
-<<<<<<< HEAD
-  const [despesasSelecionadas, setDespesasSelecionadas] = useState<Despesa[]>([]);
-
-  useEffect(() => {
-    const dadosDespesas = financialDataService.getDespesas();
-    setDespesas(dadosDespesas);
-    
-    if (typeof window !== 'undefined') {
-      (window as Window & { debugSincronizar?: () => void }).debugSincronizar = () => {
-        financialDataService.sincronizarStatusDespesas()
-        const dadosAtualizados = financialDataService.getDespesas()
-        setDespesas(dadosAtualizados)
-      }
-    }
-  }, []);
-
-  const calcularStatusConciliacao = (despesaId: string): boolean => {
-    return false; 
-=======
-  const [despesaSelecionada, setDespesaSelecionada] = useState<any>(null);
+  const [despesasSelecionadas, setDespesasSelecionadas] = useState<any[]>([]);
 
   useEffect(() => {
     const dadosDespesas = financialDataService.getDespesas();
@@ -72,6 +43,14 @@ const Despesas = () => {
       conciliado: calcularStatusConciliacao(despesa.id)
     }));
     setDespesas(despesasComConciliacao);
+    
+    if (typeof window !== 'undefined') {
+      (window as Window & { debugSincronizar?: () => void }).debugSincronizar = () => {
+        financialDataService.sincronizarStatusDespesas()
+        const dadosAtualizados = financialDataService.getDespesas()
+        setDespesas(dadosAtualizados)
+      }
+    }
   }, []);
 
   // Função para calcular se uma despesa está conciliada
@@ -102,12 +81,12 @@ const Despesas = () => {
         }
       }
       
+      
       return false; // Nenhum pagamento está conciliado
     } catch (error) {
       console.error('Erro ao calcular status de conciliação:', error);
       return false;
     }
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   };
 
   const calcularTotais = () => {
@@ -153,7 +132,6 @@ const Despesas = () => {
     return matchBusca && matchTipo && matchStatus && matchConciliacao;
   });
 
-<<<<<<< HEAD
   const handleSelectDespesa = (despesa: Despesa) => {
     setDespesasSelecionadas(prev => 
       prev.find(d => d.id === despesa.id)
@@ -346,8 +324,6 @@ const Despesas = () => {
     })
   }
 
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -360,7 +336,6 @@ const Despesas = () => {
           </div>
         </div>
         <div className="flex gap-2">
-<<<<<<< HEAD
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
@@ -383,9 +358,6 @@ const Despesas = () => {
             <ArrowDown className="h-4 w-4" />
             Baixar Selecionadas ({despesasSelecionadas.length})
           </Button>
-          <ModalLancamentoRapido onSalvo={() => {
-            const dadosDespesas = financialDataService.getDespesas();
-=======
           <Button variant="outline" className="flex items-center gap-2">
             <Download className="h-4 w-4" />
             Exportar Excel
@@ -393,7 +365,6 @@ const Despesas = () => {
           <ModalLancamentoRapido onSalvo={() => {
             const dadosDespesas = financialDataService.getDespesas();
             // Recalcular status de conciliação após lançamento rápido
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
             const despesasComConciliacao = dadosDespesas.map(despesa => ({
               ...despesa,
               conciliado: calcularStatusConciliacao(despesa.id)
@@ -417,43 +388,6 @@ const Despesas = () => {
 
       {/* KPIs Compactos */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
-<<<<<<< HEAD
-        {/* ... KPIs ... */}
-      </div>
-
-      {/* Debug Buttons */}
-      <div className="flex gap-2 mb-4">
-        <button
-          onClick={testarPagamentoCompleto}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-        >
-          🧪 Testar Pagamento Completo
-        </button>
-        <button
-          onClick={testarMultiplosPagamentos}
-          className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-        >
-          🧪 Testar Múltiplos Pagamentos
-        </button>
-        <button
-          onClick={verificarLocalStorage}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          🔍 Verificar LocalStorage + IDs
-        </button>
-        <button
-          onClick={() => {
-            console.log('🔧 [FIX DUPLICATES] Corrigindo IDs duplicados...')
-            financialDataService.fixDuplicateIds()
-            const dadosDespesas = financialDataService.getDespesas()
-            setDespesas(dadosDespesas)
-            console.log('✅ [FIX DUPLICATES] IDs duplicados corrigidos!')
-          }}
-          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          🔧 Corrigir IDs Duplicados
-        </button>
-=======
         <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="h-4 w-4" />
@@ -501,14 +435,10 @@ const Despesas = () => {
           </div>
           <p className="text-lg font-bold">R$ {totais.naoConciliados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
         </div>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       </div>
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-6 p-4 bg-card rounded-lg">
-<<<<<<< HEAD
-        {/* ... Filtros ... */}
-=======
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
@@ -575,7 +505,6 @@ const Despesas = () => {
             <SelectItem value="pendente">Pendente</SelectItem>
           </SelectContent>
         </Select>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       </div>
 
       {/* Tabela */}
@@ -584,15 +513,12 @@ const Despesas = () => {
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
-<<<<<<< HEAD
                 <th className="p-4 text-left">
                   <Checkbox
                     checked={despesasSelecionadas.length === despesasFiltradas.length && despesasFiltradas.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                 <th className="text-left p-4 font-medium">FORNECEDOR</th>
                 <th className="text-left p-4 font-medium">TIPO</th>
                 <th className="text-left p-4 font-medium">VALOR</th>
@@ -604,7 +530,6 @@ const Despesas = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-<<<<<<< HEAD
               {despesasFiltradas.map((despesa) => (
                 <tr key={despesa.id} className="hover:bg-muted/30">
                   <td className="p-4">
@@ -613,10 +538,6 @@ const Despesas = () => {
                       onCheckedChange={() => handleSelectDespesa(despesa)}
                     />
                   </td>
-=======
-              {despesasFiltradas.map((despesa, index) => (
-                <tr key={index} className="hover:bg-muted/30">
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   <td className="p-4">
                     <div>
                       <p className="font-medium">{despesa.fornecedor?.nome || 'N/A'}</p>
@@ -639,11 +560,7 @@ const Despesas = () => {
                   </td>
                   <td className="p-4">
                     {(() => {
-<<<<<<< HEAD
                       const status = despesa.status || 'pendente';
-=======
-                      const status = despesa.status || 'pago_total';
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                       const statusConfig = {
                         'pendente': { label: 'Pendente', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
                         'pago_parcial': { label: 'Pago Parcial', bgColor: 'bg-orange-100', textColor: 'text-orange-800' },
@@ -672,23 +589,6 @@ const Despesas = () => {
                       <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
-<<<<<<< HEAD
-=======
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => {
-                          setDespesaSelecionada(despesa);
-                          setModalPagamentoAberto(true);
-                        }}
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <GitMerge className="h-4 w-4" />
-                      </Button>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                       <Button variant="ghost" size="sm" className="text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -705,7 +605,6 @@ const Despesas = () => {
         isOpen={modalPagamentoAberto}
         onClose={() => {
           setModalPagamentoAberto(false);
-<<<<<<< HEAD
           setDespesasSelecionadas([]);
         }}
         onSuccess={() => {
@@ -717,27 +616,9 @@ const Despesas = () => {
           console.log('✅ [Despesas] Estado atualizado com novas despesas');
         }}
         despesas={despesasSelecionadas}
-=======
-          setDespesaSelecionada(null);
-        }}
-        onSuccess={() => {
-          const dadosDespesas = financialDataService.getDespesas();
-          // Recalcular status de conciliação após pagamento
-          const despesasComConciliacao = dadosDespesas.map(despesa => ({
-            ...despesa,
-            conciliado: calcularStatusConciliacao(despesa.id)
-          }));
-          setDespesas(despesasComConciliacao);
-        }}
-        despesa={despesaSelecionada}
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       />
     </div>
   );
 };
 
-<<<<<<< HEAD
 export default Despesas;
-=======
-export default Despesas;
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92

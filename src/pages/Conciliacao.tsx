@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import { useState, useEffect, useCallback } from "react";
-=======
-import { useState, useEffect } from "react";
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -70,35 +66,21 @@ const Conciliacao = () => {
   const { toast } = useToast();
 
   // Estado para contas bancárias reais
-<<<<<<< HEAD
-  const [contas, setContas] = useState<ContaBancaria[]>([]);
-=======
   const [contas, setContas] = useState<any[]>([]);
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   // Carregar movimentações bancárias dinamicamente  
   const [movimentacoesBanco, setMovimentacoesBanco] = useState<MovimentacaoBanco[]>([]);
   
   useEffect(() => {
     loadData();
-<<<<<<< HEAD
-  }, [loadData]);
-=======
   }, []);
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   // Recarregar dados quando as datas mudarem
   useEffect(() => {
     loadData();
-<<<<<<< HEAD
-  }, [dataInicial, dataFinal, loadData]);
-
-  const loadData = useCallback(() => {
-=======
   }, [dataInicial, dataFinal]);
 
-  const loadData = () => {
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
+  const loadData = useCallback(() => {
     // Carregar contas bancárias reais
     const contasReais = financialDataService.getContasBancarias();
     setContas(contasReais);
@@ -179,22 +161,14 @@ const Conciliacao = () => {
     
     setMovimentacoesBanco(movimentacoesFormatadas);
     setLancamentosSistema(lancamentosFormatados);
-<<<<<<< HEAD
   }, [dataInicial, dataFinal]);
-=======
-  };
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   // Carregar lançamentos do sistema dinamicamente
   const [lancamentosSistema, setLancamentosSistema] = useState<LancamentoSistema[]>([]);
 
   // Função para garantir que existe pelo menos uma conta bancária
   const garantirContaBancaria = (): string => {
-<<<<<<< HEAD
     const contas = financialDataService.getContasBancarias();
-=======
-    let contas = financialDataService.getContasBancarias();
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     if (contas.length === 0) {
       // Criar conta principal automaticamente
       const novaConta = financialDataService.saveContaBancaria({

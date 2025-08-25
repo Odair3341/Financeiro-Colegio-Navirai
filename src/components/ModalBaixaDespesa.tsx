@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -25,76 +21,38 @@ import { Despesa, ContaBancaria, Empresa, financialDataService } from "@/service
 
 const pagamentoSchema = z.object({
   contaBancariaId: z.string().min(1, "Conta bancária é obrigatória"),
-<<<<<<< HEAD
-  dataPagamento: z.date(),
-  descricao: z.string().optional(),
-=======
   valor: z.number().min(0.01, "Valor deve ser maior que zero"),
   dataPagamento: z.date(),
   descricao: z.string().min(1, "Descrição é obrigatória"),
   numeroDocumento: z.string().optional()
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 })
 
 type PagamentoFormData = z.infer<typeof pagamentoSchema>
 
 interface ModalBaixaDespesaProps {
-<<<<<<< HEAD
-  despesas: Despesa[]
-=======
   despesa: Despesa | null
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-<<<<<<< HEAD
-export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
-  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
-  const [totalAPagar, setTotalAPagar] = useState(0)
-=======
 export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
   const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
   const [empresas, setEmpresas] = useState<Empresa[]>([])
   const [valorRestante, setValorRestante] = useState(0)
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   const form = useForm<PagamentoFormData>({
     resolver: zodResolver(pagamentoSchema),
     defaultValues: {
       contaBancariaId: "",
-<<<<<<< HEAD
-      dataPagamento: new Date(),
-      descricao: "",
-=======
       valor: 0,
       dataPagamento: new Date(),
       descricao: despesa ? `Pagamento - ${despesa.descricao}` : "Pagamento",
       numeroDocumento: ""
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     }
   })
 
   useEffect(() => {
-<<<<<<< HEAD
-    if (isOpen && despesas.length > 0) {
-      const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
-      setContasBancarias(contas)
-      
-      const total = despesas.reduce((acc, despesa) => acc + (despesa.valor - (despesa.valorPago || 0)), 0)
-      setTotalAPagar(total)
-      
-      form.reset({
-        contaBancariaId: "",
-        dataPagamento: new Date(),
-        descricao: `Pagamento de ${despesas.length} despesa(s)`,
-      })
-    }
-  }, [isOpen, despesas, form])
-
-  if (despesas.length === 0) {
-=======
     if (isOpen && despesa) {
       const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
       setContasBancarias(contas)
@@ -116,46 +74,10 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
   }, [isOpen, despesa, form])
 
   if (!despesa) {
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     return null
   }
 
   const onSubmit = (data: PagamentoFormData) => {
-<<<<<<< HEAD
-    try {
-      console.log('🚀 DEBUG MODAL: Iniciando pagamento em lote')
-      console.log('📄 DEBUG MODAL: Despesas selecionadas:', despesas.map(d => d.id))
-
-      despesas.forEach(despesa => {
-        const valorRestante = despesa.valor - (despesa.valorPago || 0)
-        if (valorRestante <= 0) return;
-
-        const pagamentoData = {
-          despesaId: despesa.id,
-          contaBancariaId: data.contaBancariaId,
-          valor: valorRestante, // Paga o valor total restante de cada despesa
-          dataPagamento: format(data.dataPagamento, 'yyyy-MM-dd'),
-          descricao: data.descricao || `Pagamento - ${despesa.descricao}`,
-        }
-
-        console.log('💾 DEBUG MODAL: Dados do pagamento para despesa', despesa.id, pagamentoData)
-        financialDataService.registrarPagamento(pagamentoData)
-      })
-      
-      toast({
-        title: "Pagamentos Registrados",
-        description: `${despesas.length} despesa(s) foram baixadas com sucesso.`
-      })
-      
-      console.log('🔚 DEBUG MODAL: Fechando modal e chamando onSuccess')
-      onClose()
-      onSuccess()
-    } catch (error) {
-      console.error('❌ DEBUG MODAL: Erro ao registrar pagamentos em lote:', error)
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao registrar os pagamentos.",
-=======
     if (!despesa) return
     
     try {
@@ -198,7 +120,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao registrar o pagamento.",
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
         variant: "destructive"
       })
     }
@@ -211,8 +132,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
     }).format(value)
   }
 
-<<<<<<< HEAD
-=======
   const handleValorPreDefinido = (tipo: 'total' | 'metade') => {
     if (!despesa) return
     const valorRestante = despesa.valor - (despesa.valorPago || 0)
@@ -236,33 +155,10 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
       </Badge>
     )
   }
-
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-<<<<<<< HEAD
-          <DialogTitle>Baixar Despesas em Lote</DialogTitle>
-          <DialogDescription>
-            Registre o pagamento para as {despesas.length} despesas selecionadas.
-          </DialogDescription>
-        </DialogHeader>
-
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle>Resumo do Pagamento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total de Despesas:</span>
-                <span className="font-medium">{despesas.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Valor Total a Pagar:</span>
-                <p className="font-bold text-lg">{formatCurrency(totalAPagar)}</p>
-=======
           <DialogTitle>Baixar Despesa</DialogTitle>
           <DialogDescription>
             Registre o pagamento da despesa selecionada
@@ -304,7 +200,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
                 <p className="font-medium">
                   {format(new Date(despesa.vencimento), "dd/MM/yyyy", { locale: ptBR })}
                 </p>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
               </div>
             </div>
           </CardContent>
@@ -317,11 +212,7 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
               name="contaBancariaId"
               render={({ field }) => (
                 <FormItem>
-<<<<<<< HEAD
-                  <FormLabel>Conta Bancária de Origem</FormLabel>
-=======
                   <FormLabel>Conta Bancária</FormLabel>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -344,8 +235,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
               )}
             />
 
-<<<<<<< HEAD
-=======
             <div className="space-y-2">
               <FormField
                 control={form.control}
@@ -386,8 +275,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
                 </Button>
               </div>
             </div>
-
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
             <FormField
               control={form.control}
               name="dataPagamento"
@@ -433,11 +320,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
               name="descricao"
               render={({ field }) => (
                 <FormItem>
-<<<<<<< HEAD
-                  <FormLabel>Descrição Geral (Opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ex: Pagamento de contas da semana" {...field} />
-=======
                   <FormLabel>Descrição</FormLabel>
                   <FormControl>
                     <Input placeholder="Descrição do pagamento" {...field} />
@@ -455,7 +337,6 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
                   <FormLabel>Número do Documento (Opcional)</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: 001234, TED123, PIX456" {...field} />
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -467,11 +348,7 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
                 Cancelar
               </Button>
               <Button type="submit">
-<<<<<<< HEAD
-                Registrar Pagamentos
-=======
                 Registrar Pagamento
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
               </Button>
             </div>
           </form>
@@ -479,8 +356,4 @@ export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: Modal
       </DialogContent>
     </Dialog>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92

@@ -10,11 +10,7 @@ import { Plus, User } from "lucide-react";
 import { financialDataService } from "@/services/financialData";
 
 interface ModalClienteProps {
-<<<<<<< HEAD
   onClienteSalvo?: (cliente: Fornecedor) => void;
-=======
-  onClienteSalvo?: (cliente: any) => void;
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 }
 
 const ModalCliente = ({ onClienteSalvo }: ModalClienteProps) => {

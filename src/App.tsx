@@ -15,10 +15,7 @@ import FornecedoresImproved from "./pages/FornecedoresImproved";
 import Despesas from "./pages/Despesas";
 import Empresas from "./pages/Empresas";
 import Categorias from "./pages/Categorias";
-<<<<<<< HEAD
 import ConfiguracaoBanco from "./pages/ConfiguracaoBanco";
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
 const queryClient = new QueryClient();
 
@@ -27,16 +24,12 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-<<<<<<< HEAD
       <BrowserRouter 
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true
         }}
       >
-=======
-      <BrowserRouter>
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Index />} />
@@ -51,10 +44,7 @@ const App = () => (
             <Route path="importacao/excel" element={<ImportacaoExcel />} />
             <Route path="importacao/ofx" element={<ImportacaoOFX />} />
             <Route path="importacao-ofx" element={<ImportacaoOFX />} />
-<<<<<<< HEAD
             <Route path="configuracao-banco" element={<ConfiguracaoBanco />} />
-=======
->>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
