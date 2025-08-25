@@ -9,6 +9,8 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Separator } from "@/components/ui/separator"
 import { toast } from "@/hooks/use-toast"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -16,7 +18,7 @@ import { z } from "zod"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, DollarSign, Building2 } from "lucide-react"
+import { CalendarIcon, DollarSign, Building2, CreditCard, Users } from "lucide-react"
 import { Despesa, ContaBancaria, Empresa, financialDataService } from "@/services/financialData"
 
 const pagamentoSchema = z.object({
@@ -30,16 +32,18 @@ const pagamentoSchema = z.object({
 type PagamentoFormData = z.infer<typeof pagamentoSchema>
 
 interface ModalBaixaDespesaProps {
-  despesa: Despesa | null
+  despesas: Despesa[]
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
+export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
   const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
   const [empresas, setEmpresas] = useState<Empresa[]>([])
-  const [valorRestante, setValorRestante] = useState(0)
+  const [abaSelecionada, setAbaSelecionada] = useState("individual")
+  const [despesaSelecionada, setDespesaSelecionada] = useState<Despesa | null>(null)
+  const [valorTotalSelecionadas, setValorTotalSelecionadas] = useState(0)
 
   const form = useForm<PagamentoFormData>({
     resolver: zodResolver(pagamentoSchema),
