@@ -57,25 +57,41 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
   })
 
   useEffect(() => {
-    if (isOpen && despesa) {
+    if (isOpen && despesas.length > 0) {
       const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
       setContasBancarias(contas)
       
       const empresasData = financialDataService.getEmpresas()
       setEmpresas(empresasData)
       
-      const restante = despesa.valor - (despesa.valorPago || 0)
-      setValorRestante(restante)
+      // Calcular valor total das despesas selecionadas
+      const total = despesas.reduce((sum, despesa) => {
+        const pagamentosExistentes = financialDataService.getPagamentos()
+          .filter(p => p.despesaId === despesa.id)
+          .reduce((total, p) => total + p.valor, 0)
+        return sum + (despesa.valor - pagamentosExistentes)
+      }, 0)
+      
+      setValorTotalSelecionadas(total)
+      
+      // Se apenas uma despesa, selecionar automaticamente
+      if (despesas.length === 1) {
+        setDespesaSelecionada(despesas[0])
+        setAbaSelecionada("individual")
+      } else {
+        setDespesaSelecionada(null)
+        setAbaSelecionada("individual")
+      }
       
       form.reset({
         contaBancariaId: "",
-        valor: restante,
+        valor: despesas.length === 1 ? total : 0,
         dataPagamento: new Date(),
-        descricao: `Pagamento - ${despesa.descricao}`,
+        descricao: despesas.length === 1 ? `Pagamento - ${despesas[0].descricao}` : "Pagamento",
         numeroDocumento: ""
       })
     }
-  }, [isOpen, despesa, form])
+  }, [isOpen, despesas, form])
 
   if (!despesa) {
     return null
@@ -136,11 +152,22 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
     }).format(value)
   }
 
+  const getValorRestanteDespesa = (despesa: Despesa) => {
+    const pagamentosExistentes = financialDataService.getPagamentos()
+      .filter(p => p.despesaId === despesa.id)
+      .reduce((total, p) => total + p.valor, 0)
+    return despesa.valor - pagamentosExistentes
+  }
+
   const handleValorPreDefinido = (tipo: 'total' | 'metade') => {
-    if (!despesa) return
-    const valorRestante = despesa.valor - (despesa.valorPago || 0)
-    const valor = tipo === 'total' ? valorRestante : valorRestante / 2
-    form.setValue('valor', valor)
+    if (abaSelecionada === 'individual' && despesaSelecionada) {
+      const valorRestante = getValorRestanteDespesa(despesaSelecionada)
+      const valor = tipo === 'total' ? valorRestante : valorRestante / 2
+      form.setValue('valor', valor)
+    } else if (abaSelecionada === 'lote') {
+      const valor = tipo === 'total' ? valorTotalSelecionadas : valorTotalSelecionadas / 2
+      form.setValue('valor', valor)
+    }
   }
 
   const getStatusBadge = (status: string) => {
