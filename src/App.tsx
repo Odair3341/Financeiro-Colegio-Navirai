@@ -15,6 +15,7 @@ import FornecedoresImproved from "./pages/FornecedoresImproved";
 import Despesas from "./pages/Despesas";
 import Empresas from "./pages/Empresas";
 import Categorias from "./pages/Categorias";
+import ConfiguracaoBanco from "./pages/ConfiguracaoBanco";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="importacao/excel" element={<ImportacaoExcel />} />
             <Route path="importacao/ofx" element={<ImportacaoOFX />} />
             <Route path="importacao-ofx" element={<ImportacaoOFX />} />
+            <Route path="configuracao-banco" element={<ConfiguracaoBanco />} />
           </Route>
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

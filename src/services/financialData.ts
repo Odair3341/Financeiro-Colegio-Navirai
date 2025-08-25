@@ -1,3 +1,6 @@
+import { v4 as uuidv4 } from 'uuid';
+import { FinancialDataAdapter } from './financialDataAdapter';
+
 // Tipos principais do sistema financeiro
 export interface ContaBancaria {
   id: string
@@ -247,11 +250,22 @@ const mockDespesas: Despesa[] = [
 
 // Serviços de dados (usando localStorage para persistência)
 class FinancialDataService {
+  private idCounter: number = 0;
+  private adapter: FinancialDataAdapter;
+
   constructor() {
+    this.adapter = new FinancialDataAdapter();
     // Garantir que exista pelo menos uma empresa padrão
     this.ensureDefaultEmpresa()
     // Popular dados de teste
     this.popularDadosTeste()
+  }
+
+  private generateUniqueId(): string {
+    const timestamp = Date.now();
+    this.idCounter = (this.idCounter + 1) % 10000; // Increased to 10000 to reduce collision chance
+    const randomSuffix = Math.floor(Math.random() * 1000); // Add random component
+    return `${timestamp}_${this.idCounter}_${randomSuffix}`;
   }
 
   private ensureDefaultEmpresa(): void {
@@ -284,39 +298,58 @@ class FinancialDataService {
 
   // Contas Bancárias
   getContasBancarias(): ContaBancaria[] {
-    return this.loadFromStorage('contas_bancarias', []) // Não usar mock por padrão
+    return this.adapter.getContasBancariasSync();
+  }
+
+  async getContasBancariasAsync(): Promise<ContaBancaria[]> {
+    return await this.adapter.getContasBancarias();
   }
 
   saveContaBancaria(conta: Omit<ContaBancaria, 'id' | 'createdAt' | 'updatedAt'>): ContaBancaria {
-    const contas = this.getContasBancarias()
-    const newConta: ContaBancaria = {
+    // Para compatibilidade, retornamos uma promessa resolvida
+    const result = this.adapter.saveContaBancaria(conta);
+    
+    // Para uso síncrono, criamos um objeto temporário
+    const tempConta: ContaBancaria = {
       ...conta,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }
-    contas.push(newConta)
-    this.saveToStorage('contas_bancarias', contas)
-    return newConta
+    };
+    
+    return tempConta;
+  }
+
+  async saveContaBancariaAsync(conta: Omit<ContaBancaria, 'id' | 'createdAt' | 'updatedAt'>): Promise<ContaBancaria> {
+    return await this.adapter.saveContaBancaria(conta);
   }
 
   updateContaBancaria(id: string, updates: Partial<ContaBancaria>): ContaBancaria | null {
-    const contas = this.getContasBancarias()
-    const index = contas.findIndex(c => c.id === id)
-    if (index === -1) return null
+    // Para compatibilidade síncrona, buscamos do cache
+    const contas = this.adapter.getContasBancariasSync();
+    const conta = contas.find(c => c.id === id);
     
-    contas[index] = { ...contas[index], ...updates, updatedAt: new Date().toISOString() }
-    this.saveToStorage('contas_bancarias', contas)
-    return contas[index]
+    if (!conta) return null;
+    
+    // Executar atualização assíncrona em background
+    this.adapter.updateContaBancaria(id, updates);
+    
+    // Retornar objeto atualizado para compatibilidade
+    return { ...conta, ...updates, updatedAt: new Date().toISOString() };
+  }
+
+  async updateContaBancariaAsync(id: string, updates: Partial<ContaBancaria>): Promise<ContaBancaria | null> {
+    return await this.adapter.updateContaBancaria(id, updates);
   }
 
   deleteContaBancaria(id: string): boolean {
-    const contas = this.getContasBancarias()
-    const filtered = contas.filter(c => c.id !== id)
-    if (filtered.length === contas.length) return false
-    
-    this.saveToStorage('contas_bancarias', filtered)
-    return true
+    // Executar deleção assíncrona em background
+    this.adapter.deleteContaBancaria(id);
+    return true;
+  }
+
+  async deleteContaBancariaAsync(id: string): Promise<boolean> {
+    return await this.adapter.deleteContaBancaria(id);
   }
 
   // Empresas (Sistema independente)
@@ -328,7 +361,7 @@ class FinancialDataService {
     const empresas = this.getEmpresas()
     const newEmpresa: Empresa = {
       ...empresa,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -358,133 +391,139 @@ class FinancialDataService {
 
   // Fornecedores
   getFornecedores(): Fornecedor[] {
-    return this.loadFromStorage('fornecedores', []) // Não usar mock por padrão
+    return this.adapter.getFornecedoresSync();
+  }
+
+  async getFornecedoresAsync(): Promise<Fornecedor[]> {
+    return await this.adapter.getFornecedores();
   }
 
   saveFornecedor(fornecedor: Omit<Fornecedor, 'id' | 'createdAt' | 'updatedAt'>): Fornecedor {
-    const fornecedores = this.getFornecedores()
-    const newFornecedor: Fornecedor = {
+    // Para compatibilidade, executamos assíncrono em background
+    this.adapter.saveFornecedor(fornecedor);
+    
+    // Retornar objeto temporário para compatibilidade síncrona
+    const tempFornecedor: Fornecedor = {
       ...fornecedor,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }
-    fornecedores.push(newFornecedor)
-    this.saveToStorage('fornecedores', fornecedores)
-    return newFornecedor
+    };
+    
+    return tempFornecedor;
+  }
+
+  async saveFornecedorAsync(fornecedor: Omit<Fornecedor, 'id' | 'createdAt' | 'updatedAt'>): Promise<Fornecedor> {
+    return await this.adapter.saveFornecedor(fornecedor);
   }
 
   updateFornecedor(id: string, updates: Partial<Fornecedor>): Fornecedor | null {
-    const fornecedores = this.getFornecedores()
-    const index = fornecedores.findIndex(f => f.id === id)
-    if (index === -1) return null
+    const fornecedores = this.adapter.getFornecedoresSync();
+    const fornecedor = fornecedores.find(f => f.id === id);
     
-    fornecedores[index] = { ...fornecedores[index], ...updates, updatedAt: new Date().toISOString() }
-    this.saveToStorage('fornecedores', fornecedores)
-    return fornecedores[index]
+    if (!fornecedor) return null;
+    
+    // Executar atualização assíncrona em background
+    this.adapter.updateFornecedor(id, updates);
+    
+    // Retornar objeto atualizado para compatibilidade
+    return { ...fornecedor, ...updates, updatedAt: new Date().toISOString() };
+  }
+
+  async updateFornecedorAsync(id: string, updates: Partial<Fornecedor>): Promise<Fornecedor | null> {
+    return await this.adapter.updateFornecedor(id, updates);
   }
 
   deleteFornecedor(id: string): boolean {
-    const fornecedores = this.getFornecedores()
-    const filtered = fornecedores.filter(f => f.id !== id)
-    if (filtered.length === fornecedores.length) return false
-    
-    this.saveToStorage('fornecedores', filtered)
-    return true
+    // Executar deleção assíncrona em background
+    this.adapter.deleteFornecedor(id);
+    return true;
+  }
+
+  async deleteFornecedorAsync(id: string): Promise<boolean> {
+    return await this.adapter.deleteFornecedor(id);
   }
 
   // Despesas
   getDespesas(): Despesa[] {
-    const despesas = this.loadFromStorage('despesas', []) // Não usar mock por padrão
-    const fornecedores = this.getFornecedores()
-    const empresas = this.getEmpresas()
-    
-    // Adicionar dados do fornecedor e empresa
-    return despesas.map(despesa => ({
-      ...despesa,
-      fornecedor: fornecedores.find(f => f.id === despesa.fornecedorId),
-      empresa: empresas.find(e => e.id === despesa.empresaId)
-    }))
+    return this.adapter.getDespesasSync();
+  }
+
+  async getDespesasAsync(): Promise<Despesa[]> {
+    return await this.adapter.getDespesas();
   }
 
   saveDespesa(despesa: Omit<Despesa, 'id' | 'createdAt' | 'updatedAt'>): Despesa {
-    // Usar dados raw do localStorage, não dados enriched
-    const despesasRaw = this.loadFromStorage('despesas', [])
-    const newDespesa: Despesa = {
+    // Para compatibilidade, executamos assíncrono em background
+    this.adapter.saveDespesa(despesa);
+    
+    // Retornar objeto temporário para compatibilidade síncrona
+    const tempDespesa: Despesa = {
       ...despesa,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
-    }
-    despesasRaw.push(newDespesa)
-    this.saveToStorage('despesas', despesasRaw)
+    };
     
-    // Retornar a despesa com dados enriched
-    const fornecedores = this.getFornecedores()
-    const empresas = this.getEmpresas()
-    return {
-      ...newDespesa,
-      fornecedor: fornecedores.find(f => f.id === newDespesa.fornecedorId),
-      empresa: empresas.find(e => e.id === newDespesa.empresaId)
-    }
+    return tempDespesa;
+  }
+
+  async saveDespesaAsync(despesa: Omit<Despesa, 'id' | 'createdAt' | 'updatedAt'>): Promise<Despesa> {
+    return await this.adapter.saveDespesa(despesa);
   }
 
   updateDespesa(id: string, updates: Partial<Despesa>): Despesa | null {
-    console.log('🔄 Iniciando updateDespesa para:', id, 'com updates:', updates)
+    const despesas = this.adapter.getDespesasSync();
+    const despesa = despesas.find(d => d.id === id);
     
-    // Usar dados raw do localStorage, não dados enriched
-    const despesasRaw = this.loadFromStorage('despesas', [])
-    console.log('📋 Total de despesas raw antes da atualização:', despesasRaw.length)
+    if (!despesa) return null;
     
-    const index = despesasRaw.findIndex(d => d.id === id)
-    if (index === -1) {
-      console.log('❌ Despesa não encontrada no índice:', id)
-      return null
-    }
+    // Executar atualização assíncrona em background
+    this.adapter.updateDespesa(id, updates);
     
-    console.log('📄 Despesa encontrada no índice:', index, despesasRaw[index])
-    
-    // Remover propriedades enriched do updates se existirem
-    const { fornecedor, empresa, ...cleanUpdates } = updates as any
-    console.log('🧹 Updates limpos (sem propriedades enriched):', cleanUpdates)
-    
-    const despesaAtualizada = { ...despesasRaw[index], ...cleanUpdates, updatedAt: new Date().toISOString() }
-    console.log('📝 Despesa atualizada:', despesaAtualizada)
-    
-    despesasRaw[index] = despesaAtualizada
-    this.saveToStorage('despesas', despesasRaw)
-    console.log('💾 Despesa salva no localStorage')
-    
-    // Verificar se foi realmente salva
-    const despesasVerificacao = this.loadFromStorage('despesas', [])
-    const despesaVerificada = despesasVerificacao.find(d => d.id === id)
-    console.log('🔍 Verificação - despesa após salvar:', despesaVerificada)
-    
-    // Retornar a despesa com dados enriched
-    const fornecedores = this.getFornecedores()
-    const empresas = this.getEmpresas()
-    const resultado = {
-      ...despesaAtualizada,
-      fornecedor: fornecedores.find(f => f.id === despesaAtualizada.fornecedorId),
-      empresa: empresas.find(e => e.id === despesaAtualizada.empresaId)
-    }
-    console.log('📊 Resultado final do updateDespesa:', resultado)
-    return resultado
+    // Retornar objeto atualizado para compatibilidade
+    return { ...despesa, ...updates, updatedAt: new Date().toISOString() };
+  }
+
+  async updateDespesaAsync(id: string, updates: Partial<Despesa>): Promise<Despesa | null> {
+    return await this.adapter.updateDespesa(id, updates);
   }
 
   deleteDespesa(id: string): boolean {
-    // Usar dados raw do localStorage, não dados enriched
-    const despesasRaw = this.loadFromStorage('despesas', [])
-    const filtered = despesasRaw.filter(d => d.id !== id)
-    if (filtered.length === despesasRaw.length) return false
-    
-    this.saveToStorage('despesas', filtered)
-    return true
+    // Executar deleção assíncrona em background
+    this.adapter.deleteDespesa(id);
+    return true;
+  }
+
+  async deleteDespesaAsync(id: string): Promise<boolean> {
+    return await this.adapter.deleteDespesa(id);
   }
 
   // Pagamentos
   getPagamentos(): Pagamento[] {
-    return this.loadFromStorage('pagamentos', [])
+    return this.adapter.getPagamentos() as Pagamento[]; // Temporário para compatibilidade
+  }
+
+  async getPagamentosAsync(): Promise<Pagamento[]> {
+    return await this.adapter.getPagamentos();
+  }
+
+  savePagamento(pagamento: Omit<Pagamento, 'id' | 'createdAt'>): Pagamento {
+    // Para compatibilidade, executamos assíncrono em background
+    this.adapter.savePagamento(pagamento);
+    
+    // Retornar objeto temporário para compatibilidade síncrona
+    const tempPagamento: Pagamento = {
+      ...pagamento,
+      id: this.generateUniqueId(),
+      createdAt: new Date().toISOString()
+    };
+    
+    return tempPagamento;
+  }
+
+  async savePagamentoAsync(pagamento: Omit<Pagamento, 'id' | 'createdAt'>): Promise<Pagamento> {
+    return await this.adapter.savePagamento(pagamento);
   }
 
   // Recebimentos
@@ -498,7 +537,7 @@ class FinancialDataService {
     const pagamentos = this.getPagamentos()
     const newPagamento: Pagamento = {
       ...pagamento,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString()
     }
     pagamentos.push(newPagamento)
@@ -542,7 +581,7 @@ class FinancialDataService {
     const recebimentos = this.getRecebimentos()
     const newRecebimento: Recebimento = {
       ...recebimento,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString()
     }
     recebimentos.push(newRecebimento)
@@ -707,20 +746,28 @@ class FinancialDataService {
     console.log('💰 [atualizarStatusDespesa] Total pago calculado:', totalPago)
     console.log('💰 [atualizarStatusDespesa] Valor da despesa:', valorDespesa)
     console.log('📊 [atualizarStatusDespesa] Status atual:', despesa.status)
+    
+    // Debug detalhado da comparação
+    console.log('🔍 [atualizarStatusDespesa] ANÁLISE DETALHADA:')
+    console.log('  - totalPago >= valorDespesa:', totalPago >= valorDespesa)
+    console.log('  - totalPago === valorDespesa:', totalPago === valorDespesa)
+    console.log('  - Diferença (totalPago - valorDespesa):', totalPago - valorDespesa)
+    console.log('  - totalPago > 0:', totalPago > 0)
+    console.log('  - Tipos:', typeof totalPago, typeof valorDespesa)
 
     let novoStatus: Despesa['status'] = 'pendente'
     
     if (totalPago >= valorDespesa) {
       novoStatus = 'pago_total'
-      console.log('✅ [atualizarStatusDespesa] Status definido como: pago_total')
+      console.log('✅ [atualizarStatusDespesa] Status definido como: pago_total (totalPago >= valorDespesa)')
     } else if (totalPago > 0) {
       novoStatus = 'pago_parcial'
-      console.log('🟡 [atualizarStatusDespesa] Status definido como: pago_parcial')
+      console.log('🟡 [atualizarStatusDespesa] Status definido como: pago_parcial (totalPago > 0)')
     } else if (new Date(despesa.vencimento) < new Date()) {
       novoStatus = 'vencido'
-      console.log('🔴 [atualizarStatusDespesa] Status definido como: vencido')
+      console.log('🔴 [atualizarStatusDespesa] Status definido como: vencido (vencimento < hoje)')
     } else {
-      console.log('⏳ [atualizarStatusDespesa] Status mantido como: pendente')
+      console.log('⏳ [atualizarStatusDespesa] Status mantido como: pendente (nenhuma condição atendida)')
     }
 
     console.log('🔄 [atualizarStatusDespesa] Chamando updateDespesa com:', { valorPago: totalPago, status: novoStatus })
@@ -742,7 +789,7 @@ class FinancialDataService {
     const lancamentos = this.getLancamentosSistema()
     const newLancamento: LancamentoSistema = {
       ...lancamento,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       // Se a data não foi fornecida, usar a data atual
       data: lancamento.data || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString()
@@ -807,7 +854,7 @@ class FinancialDataService {
     const conciliacoes = this.getConciliacoes()
     const newConciliacao: Conciliacao = {
       ...conciliacao,
-      id: Date.now().toString(),
+      id: this.generateUniqueId(),
       createdAt: new Date().toISOString()
     }
     conciliacoes.push(newConciliacao)
@@ -838,6 +885,58 @@ class FinancialDataService {
 
   private onlyDigits(text: string): string {
     return String(text || '').replace(/\D/g, '')
+  }
+
+  // Corrigir IDs duplicados nas despesas
+  fixDuplicateIds(): { fixedDespesas: number } {
+    console.log('🔧 [fixDuplicateIds] Iniciando correção de IDs duplicados...')
+    
+    const despesasRaw = this.loadFromStorage('despesas', [])
+    console.log('📋 [fixDuplicateIds] Total de despesas:', despesasRaw.length)
+    
+    const idsVistos = new Set<string>()
+    const despesasCorrigidas: Despesa[] = []
+    let despesasCorrigidasCount = 0
+    
+    despesasRaw.forEach((despesa, index) => {
+      if (idsVistos.has(despesa.id)) {
+        // ID duplicado encontrado - gerar novo ID
+        const novoId = this.generateUniqueId()
+        console.log(`🔧 [fixDuplicateIds] Corrigindo ID duplicado: ${despesa.id} -> ${novoId}`)
+        
+        const despesaCorrigida = {
+          ...despesa,
+          id: novoId,
+          updatedAt: new Date().toISOString()
+        }
+        
+        despesasCorrigidas.push(despesaCorrigida)
+        idsVistos.add(novoId)
+        despesasCorrigidasCount++
+        
+        // Atualizar pagamentos que referenciam o ID antigo
+        const pagamentos = this.getPagamentos()
+        const pagamentosAtualizados = pagamentos.map(pag => {
+          if (pag.despesaId === despesa.id) {
+            console.log(`🔧 [fixDuplicateIds] Atualizando referência de pagamento: ${despesa.id} -> ${novoId}`)
+            return { ...pag, despesaId: novoId }
+          }
+          return pag
+        })
+        this.saveToStorage('pagamentos', pagamentosAtualizados)
+        
+      } else {
+        // ID único - manter como está
+        despesasCorrigidas.push(despesa)
+        idsVistos.add(despesa.id)
+      }
+    })
+    
+    // Salvar despesas corrigidas
+    this.saveToStorage('despesas', despesasCorrigidas)
+    
+    console.log(`✅ [fixDuplicateIds] Correção concluída. ${despesasCorrigidasCount} despesas corrigidas.`)
+    return { fixedDespesas: despesasCorrigidasCount }
   }
 
   // Remove duplicatas em fornecedores e despesas e mantém referências
@@ -905,19 +1004,30 @@ class FinancialDataService {
 
   // Limpa todos os dados persistidos (mantém estrutura vazia)
   clearAllData(): void {
-    const entities = [
-      'contas_bancarias',
-      'empresas',
-      'fornecedores',
-      'despesas',
-      'pagamentos',
-      'recebimentos',
-      'lancamentos_sistema',
-      'movimentacoes_bancarias',
-      'conciliacoes'
-    ]
-    entities.forEach((e) => this.saveToStorage(e, [] as any))
+    // Executar limpeza assíncrona em background
+    this.adapter.clearAllData();
+  }
+
+  async clearAllDataAsync(): Promise<void> {
+    return await this.adapter.clearAllData();
+  }
+
+  // Métodos específicos para integração com banco
+  async forceMigration(): Promise<void> {
+    return await this.adapter.forceMigration();
+  }
+
+  async getDatabaseStatus(): Promise<{ connected: boolean; error?: string; tables?: string[] }> {
+    return await this.adapter.getDatabaseStatus();
+  }
+
+  // Método para verificar se está usando banco ou localStorage
+  async isUsingDatabase(): Promise<boolean> {
+    const status = await this.adapter.getDatabaseStatus();
+    return status.connected;
   }
 }
 
-export const financialDataService = new FinancialDataService()
+export const financialDataService = new FinancialDataService();
+export { FinancialDataService };
+export { ExcelImportService } from './excelImport';

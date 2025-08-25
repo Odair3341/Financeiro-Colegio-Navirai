@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { financialDataService } from "@/services/financialData";
 import { ModalBaixaDespesa } from "@/components/ModalBaixaDespesa";
+
 import { formatDateBR } from "@/lib/dateUtils";
 import ModalLancamentoRapido from "@/components/ModalLancamentoRapido";
 
@@ -33,14 +34,14 @@ const Despesas = () => {
   const [filtroConciliacao, setFiltroConciliacao] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
-  const [despesasSelecionadas, setDespesasSelecionadas] = useState<any[]>([]);
+  const [despesasSelecionadas, setDespesasSelecionadas] = useState<Despesa[]>([]);
 
   useEffect(() => {
     const dadosDespesas = financialDataService.getDespesas();
     setDespesas(dadosDespesas);
     
     if (typeof window !== 'undefined') {
-      (window as any).debugSincronizar = () => {
+      (window as Window & { debugSincronizar?: () => void }).debugSincronizar = () => {
         financialDataService.sincronizarStatusDespesas()
         const dadosAtualizados = financialDataService.getDespesas()
         setDespesas(dadosAtualizados)
@@ -95,7 +96,7 @@ const Despesas = () => {
     return matchBusca && matchTipo && matchStatus && matchConciliacao;
   });
 
-  const handleSelectDespesa = (despesa: any) => {
+  const handleSelectDespesa = (despesa: Despesa) => {
     setDespesasSelecionadas(prev => 
       prev.find(d => d.id === despesa.id)
         ? prev.filter(d => d.id !== despesa.id)
@@ -110,6 +111,182 @@ const Despesas = () => {
       setDespesasSelecionadas(despesasFiltradas);
     }
   };
+
+  const testarPagamentoCompleto = () => {
+    console.log('🧪 [TESTE] Iniciando teste de pagamento completo')
+    
+    const despesasDisponiveis = despesas.filter(d => d.status !== 'pago_total')
+    if (despesasDisponiveis.length === 0) {
+      console.log('❌ [TESTE] Nenhuma despesa disponível para teste')
+      return
+    }
+    
+    const despesaTeste = despesasDisponiveis[0]
+    console.log('🎯 [TESTE] Despesa selecionada:', despesaTeste)
+    
+    const pagamentoTeste = {
+      despesaId: despesaTeste.id,
+      valor: despesaTeste.valor,
+      dataPagamento: new Date().toISOString().split('T')[0],
+      descricao: `Teste pagamento completo - ${despesaTeste.descricao}`,
+      numeroDocumento: `TESTE-${Date.now()}`
+    }
+    
+    console.log('💰 [TESTE] Dados do pagamento:', pagamentoTeste)
+    
+    try {
+      const resultado = financialDataService.registrarPagamento(pagamentoTeste)
+      console.log('✅ [TESTE] Pagamento registrado:', resultado)
+      
+      // Recarregar dados
+      setTimeout(() => {
+        setDespesas(financialDataService.getDespesas())
+        console.log('🔄 [TESTE] Dados recarregados')
+      }, 100)
+      
+    } catch (error) {
+      console.error('❌ [TESTE] Erro ao registrar pagamento:', error)
+    }
+  }
+
+  const testarMultiplosPagamentos = () => {
+    console.log('🧪 [TESTE MÚLTIPLOS] Iniciando teste de múltiplos pagamentos')
+    
+    const despesasDisponiveis = despesas.filter(d => d.status !== 'pago_total')
+    if (despesasDisponiveis.length === 0) {
+      console.log('❌ [TESTE MÚLTIPLOS] Nenhuma despesa disponível para teste')
+      return
+    }
+    
+    const despesaTeste = despesasDisponiveis[0]
+    console.log('🎯 [TESTE MÚLTIPLOS] Despesa selecionada:', despesaTeste)
+    
+    // Dividir o valor em 3 pagamentos
+    const valorTotal = despesaTeste.valor
+    const pagamento1 = Math.round((valorTotal * 0.4) * 100) / 100
+    const pagamento2 = Math.round((valorTotal * 0.3) * 100) / 100
+    const pagamento3 = Math.round((valorTotal - pagamento1 - pagamento2) * 100) / 100
+    
+    console.log('💰 [TESTE MÚLTIPLOS] Valores dos pagamentos:', { pagamento1, pagamento2, pagamento3, total: pagamento1 + pagamento2 + pagamento3 })
+    
+    const pagamentos = [
+      {
+        despesaId: despesaTeste.id,
+        valor: pagamento1,
+        dataPagamento: new Date().toISOString().split('T')[0],
+        descricao: `Pagamento 1/3 - ${despesaTeste.descricao}`,
+        numeroDocumento: `TESTE-1-${Date.now()}`
+      },
+      {
+        despesaId: despesaTeste.id,
+        valor: pagamento2,
+        dataPagamento: new Date().toISOString().split('T')[0],
+        descricao: `Pagamento 2/3 - ${despesaTeste.descricao}`,
+        numeroDocumento: `TESTE-2-${Date.now()}`
+      },
+      {
+        despesaId: despesaTeste.id,
+        valor: pagamento3,
+        dataPagamento: new Date().toISOString().split('T')[0],
+        descricao: `Pagamento 3/3 - ${despesaTeste.descricao}`,
+        numeroDocumento: `TESTE-3-${Date.now()}`
+      }
+    ]
+    
+    try {
+      // Registrar os 3 pagamentos com intervalo
+      pagamentos.forEach((pagamento, index) => {
+        setTimeout(() => {
+          console.log(`💰 [TESTE MÚLTIPLOS] Registrando pagamento ${index + 1}:`, pagamento)
+          const resultado = financialDataService.registrarPagamento(pagamento)
+          console.log(`✅ [TESTE MÚLTIPLOS] Pagamento ${index + 1} registrado:`, resultado)
+          
+          // Verificar localStorage após cada pagamento
+          const pagamentosNoStorage = JSON.parse(localStorage.getItem('financeflow_pagamentos') || '[]')
+          console.log(`📦 [TESTE MÚLTIPLOS] Pagamentos no localStorage após pagamento ${index + 1}:`, pagamentosNoStorage.length)
+          console.log(`🔍 [TESTE MÚLTIPLOS] Pagamentos da despesa no storage:`, pagamentosNoStorage.filter(p => p.despesaId === despesaTeste.id))
+          
+          // Recarregar dados após o último pagamento
+          if (index === pagamentos.length - 1) {
+            setTimeout(() => {
+              setDespesas(financialDataService.getDespesas())
+              console.log('🔄 [TESTE MÚLTIPLOS] Dados recarregados após todos os pagamentos')
+              
+              // Verificação final
+              const pagamentosFinal = JSON.parse(localStorage.getItem('financeflow_pagamentos') || '[]')
+              const pagamentosDespesaFinal = pagamentosFinal.filter(p => p.despesaId === despesaTeste.id)
+              console.log('📊 [TESTE MÚLTIPLOS] VERIFICAÇÃO FINAL:')
+              console.log('  - Total de pagamentos no storage:', pagamentosFinal.length)
+              console.log('  - Pagamentos da despesa:', pagamentosDespesaFinal.length)
+              console.log('  - Soma dos valores:', pagamentosDespesaFinal.reduce((sum, p) => sum + p.valor, 0))
+            }, 100)
+          }
+        }, index * 500) // 500ms entre cada pagamento
+      })
+      
+    } catch (error) {
+      console.error('❌ [TESTE MÚLTIPLOS] Erro ao registrar pagamentos:', error)
+    }
+  }
+
+  const verificarLocalStorage = () => {
+    console.log('🔍 [DEBUG STORAGE] Verificando estado do localStorage:')
+    
+    const pagamentos = JSON.parse(localStorage.getItem('financeflow_pagamentos') || '[]')
+    const despesasStorage = JSON.parse(localStorage.getItem('financeflow_despesas') || '[]')
+    
+    console.log('📦 [DEBUG STORAGE] Total de pagamentos:', pagamentos.length)
+    console.log('📦 [DEBUG STORAGE] Total de despesas:', despesasStorage.length)
+    
+    // Verificar IDs duplicados nas despesas
+    const idsVistos = new Set()
+    const idsDuplicados = new Set()
+    
+    despesasStorage.forEach(despesa => {
+      if (idsVistos.has(despesa.id)) {
+        idsDuplicados.add(despesa.id)
+        console.error('🚨 [DUPLICATE ID] ID duplicado encontrado:', despesa.id)
+      } else {
+        idsVistos.add(despesa.id)
+      }
+    })
+    
+    if (idsDuplicados.size > 0) {
+      console.error('🚨 [DUPLICATE IDS] Total de IDs duplicados:', idsDuplicados.size)
+      console.error('🚨 [DUPLICATE IDS] IDs duplicados:', Array.from(idsDuplicados))
+      
+      // Mostrar detalhes das despesas com IDs duplicados
+      idsDuplicados.forEach(id => {
+        const despesasComMesmoId = despesasStorage.filter(d => d.id === id)
+        console.error(`🚨 [DUPLICATE ID ${id}] Despesas com mesmo ID:`, despesasComMesmoId)
+      })
+    } else {
+      console.log('✅ [NO DUPLICATES] Nenhum ID duplicado encontrado nas despesas')
+    }
+    
+    console.log('📋 [DEBUG STORAGE] Despesas detalhadas:')
+    despesasStorage.forEach((despesa, index) => {
+      console.log(`  ${index + 1}. ID: ${despesa.id} | Status: ${despesa.status} | Valor: ${despesa.valor} | Pago: ${despesa.valorPago}`)
+    })
+    
+    console.log('💰 [DEBUG STORAGE] Pagamentos detalhados:')
+    pagamentos.forEach((pagamento, index) => {
+      console.log(`  ${index + 1}. ID: ${pagamento.id} | DespesaID: ${pagamento.despesaId} | Valor: ${pagamento.valor}`)
+    })
+    
+    // Agrupar pagamentos por despesa
+    const pagamentosPorDespesa = pagamentos.reduce((acc, pag) => {
+      if (!acc[pag.despesaId]) acc[pag.despesaId] = []
+      acc[pag.despesaId].push(pag)
+      return acc
+    }, {})
+    
+    console.log('📊 [DEBUG STORAGE] Pagamentos agrupados por despesa:')
+    Object.entries(pagamentosPorDespesa).forEach(([despesaId, pags]) => {
+      const total = pags.reduce((sum, p) => sum + (typeof p.valor === 'number' ? p.valor : parseFloat(p.valor) || 0), 0)
+      console.log(`  DespesaID: ${despesaId} | Pagamentos: ${pags.length} | Total: R$ ${total.toFixed(2)}`)
+    })
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -186,6 +363,24 @@ const Despesas = () => {
           className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
           🧪 Testar Múltiplos Pagamentos
+        </button>
+        <button
+          onClick={verificarLocalStorage}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          🔍 Verificar LocalStorage + IDs
+        </button>
+        <button
+          onClick={() => {
+            console.log('🔧 [FIX DUPLICATES] Corrigindo IDs duplicados...')
+            financialDataService.fixDuplicateIds()
+            const dadosDespesas = financialDataService.getDespesas()
+            setDespesas(dadosDespesas)
+            console.log('✅ [FIX DUPLICATES] IDs duplicados corrigidos!')
+          }}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          🔧 Corrigir IDs Duplicados
         </button>
       </div>
 

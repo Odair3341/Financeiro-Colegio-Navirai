@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -66,21 +66,21 @@ const Conciliacao = () => {
   const { toast } = useToast();
 
   // Estado para contas bancárias reais
-  const [contas, setContas] = useState<any[]>([]);
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
 
   // Carregar movimentações bancárias dinamicamente  
   const [movimentacoesBanco, setMovimentacoesBanco] = useState<MovimentacaoBanco[]>([]);
   
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   // Recarregar dados quando as datas mudarem
   useEffect(() => {
     loadData();
-  }, [dataInicial, dataFinal]);
+  }, [dataInicial, dataFinal, loadData]);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     // Carregar contas bancárias reais
     const contasReais = financialDataService.getContasBancarias();
     setContas(contasReais);
@@ -161,14 +161,14 @@ const Conciliacao = () => {
     
     setMovimentacoesBanco(movimentacoesFormatadas);
     setLancamentosSistema(lancamentosFormatados);
-  };
+  }, [dataInicial, dataFinal]);
 
   // Carregar lançamentos do sistema dinamicamente
   const [lancamentosSistema, setLancamentosSistema] = useState<LancamentoSistema[]>([]);
 
   // Função para garantir que existe pelo menos uma conta bancária
   const garantirContaBancaria = (): string => {
-    let contas = financialDataService.getContasBancarias();
+    const contas = financialDataService.getContasBancarias();
     if (contas.length === 0) {
       // Criar conta principal automaticamente
       const novaConta = financialDataService.saveContaBancaria({

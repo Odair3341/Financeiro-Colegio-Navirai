@@ -34,11 +34,11 @@ interface ModalRecebimentoProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  despesa?: any; // Dados da despesa específica (opcional)
+  despesa?: Despesa; // Dados da despesa específica (opcional)
 }
 
 export function ModalRecebimento({ isOpen, onClose, onSuccess, despesa }: ModalRecebimentoProps) {
-  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
+  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([]);
   const { toast } = useToast();
 
   const form = useForm<RecebimentoFormData>({
@@ -66,7 +66,7 @@ export function ModalRecebimento({ isOpen, onClose, onSuccess, despesa }: ModalR
         numeroDocumento: "",
       });
     }
-  }, [isOpen, form]);
+  }, [isOpen, form, despesa]);
 
   const onSubmit = async (data: RecebimentoFormData) => {
     try {

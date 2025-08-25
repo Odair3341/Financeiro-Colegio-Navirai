@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom"
 import {
   Building2,
   CreditCard,
+  Database,
   DollarSign,
   FileText,
   GitMerge,
@@ -93,6 +94,12 @@ const menuItems = [
     url: "/importacao/ofx",
     icon: Import,
     group: "importacao"
+  },
+  {
+    title: "Configuração BD",
+    url: "/configuracao-banco",
+    icon: Database,
+    group: "configuracao"
   }
 ]
 
@@ -100,7 +107,8 @@ const groups = {
   principal: "Principal",
   financeiro: "Financeiro",
   gestao: "Gestão",
-  importacao: "Importação"
+  importacao: "Importação",
+  configuracao: "Configuração"
 }
 
 export function AppSidebar() {

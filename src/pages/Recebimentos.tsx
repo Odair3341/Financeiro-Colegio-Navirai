@@ -20,7 +20,7 @@ import {
   Check
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { financialDataService, Fornecedor } from "@/services/financialData";
+import { financialDataService, Fornecedor, ContaBancaria } from "@/services/financialData";
 import ModalCliente from "@/components/ModalCliente";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -46,8 +46,8 @@ const Recebimentos = () => {
     cliente: ""
   });
   
-  const [contasBancarias, setContasBancarias] = useState<any[]>([]);
-  const [lancamentosSistema, setLancamentosSistema] = useState<any[]>([]);
+  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([]);
+  const [lancamentosSistema, setLancamentosSistema] = useState<Recebimento[]>([]);
   const [clientes, setClientes] = useState<Fornecedor[]>([]);
   const [clienteSelecionado, setClienteSelecionado] = useState<Fornecedor | null>(null);
   const [openCliente, setOpenCliente] = useState(false);
