@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+=======
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { 
@@ -21,7 +27,10 @@ import {
 } from "lucide-react";
 import { financialDataService } from "@/services/financialData";
 import { ModalBaixaDespesa } from "@/components/ModalBaixaDespesa";
+<<<<<<< HEAD
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { formatDateBR } from "@/lib/dateUtils";
 import ModalLancamentoRapido from "@/components/ModalLancamentoRapido";
 
@@ -34,6 +43,7 @@ const Despesas = () => {
   const [filtroConciliacao, setFiltroConciliacao] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
+<<<<<<< HEAD
   const [despesasSelecionadas, setDespesasSelecionadas] = useState<Despesa[]>([]);
 
   useEffect(() => {
@@ -51,6 +61,53 @@ const Despesas = () => {
 
   const calcularStatusConciliacao = (despesaId: string): boolean => {
     return false; 
+=======
+  const [despesaSelecionada, setDespesaSelecionada] = useState<any>(null);
+
+  useEffect(() => {
+    const dadosDespesas = financialDataService.getDespesas();
+    // Adicionar status de conciliação calculado dinamicamente
+    const despesasComConciliacao = dadosDespesas.map(despesa => ({
+      ...despesa,
+      conciliado: calcularStatusConciliacao(despesa.id)
+    }));
+    setDespesas(despesasComConciliacao);
+  }, []);
+
+  // Função para calcular se uma despesa está conciliada
+  const calcularStatusConciliacao = (despesaId: string): boolean => {
+    try {
+      const pagamentos = financialDataService.getPagamentos();
+      const lancamentos = financialDataService.getLancamentosSistema();
+      const conciliacoes = financialDataService.getConciliacoes();
+
+      // Encontrar pagamentos relacionados a esta despesa
+      const pagamentosDespesa = pagamentos.filter(p => p.despesaId === despesaId);
+      
+      // Para cada pagamento, verificar se há lançamento do sistema correspondente
+      for (const pagamento of pagamentosDespesa) {
+        const lancamento = lancamentos.find(l => 
+          l.origem === 'pagamento' && l.referenciaId === pagamento.id
+        );
+        
+        if (lancamento) {
+          // Verificar se este lançamento está conciliado (aceita 'conciliado' e 'divergente')
+          const conciliacao = conciliacoes.find(c => 
+            c.lancamentoId === lancamento.id && (c.status === 'conciliado' || c.status === 'divergente')
+          );
+          
+          if (conciliacao) {
+            return true; // Pelo menos um pagamento está conciliado
+          }
+        }
+      }
+      
+      return false; // Nenhum pagamento está conciliado
+    } catch (error) {
+      console.error('Erro ao calcular status de conciliação:', error);
+      return false;
+    }
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   };
 
   const calcularTotais = () => {
@@ -96,6 +153,7 @@ const Despesas = () => {
     return matchBusca && matchTipo && matchStatus && matchConciliacao;
   });
 
+<<<<<<< HEAD
   const handleSelectDespesa = (despesa: Despesa) => {
     setDespesasSelecionadas(prev => 
       prev.find(d => d.id === despesa.id)
@@ -288,6 +346,8 @@ const Despesas = () => {
     })
   }
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
@@ -300,6 +360,7 @@ const Despesas = () => {
           </div>
         </div>
         <div className="flex gap-2">
+<<<<<<< HEAD
           <Button 
             variant="outline" 
             className="flex items-center gap-2"
@@ -324,6 +385,15 @@ const Despesas = () => {
           </Button>
           <ModalLancamentoRapido onSalvo={() => {
             const dadosDespesas = financialDataService.getDespesas();
+=======
+          <Button variant="outline" className="flex items-center gap-2">
+            <Download className="h-4 w-4" />
+            Exportar Excel
+          </Button>
+          <ModalLancamentoRapido onSalvo={() => {
+            const dadosDespesas = financialDataService.getDespesas();
+            // Recalcular status de conciliação após lançamento rápido
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
             const despesasComConciliacao = dadosDespesas.map(despesa => ({
               ...despesa,
               conciliado: calcularStatusConciliacao(despesa.id)
@@ -347,6 +417,7 @@ const Despesas = () => {
 
       {/* KPIs Compactos */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+<<<<<<< HEAD
         {/* ... KPIs ... */}
       </div>
 
@@ -382,11 +453,129 @@ const Despesas = () => {
         >
           🔧 Corrigir IDs Duplicados
         </button>
+=======
+        <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingUp className="h-4 w-4" />
+            <span className="text-xs">Receitas</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <TrendingDown className="h-4 w-4" />
+            <span className="text-xs">Despesas</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="h-4 w-4" />
+            <span className="text-xs">Pendentes</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.pendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <Wallet className="h-4 w-4" />
+            <span className="text-xs">Saldo</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <GitMerge className="h-4 w-4" />
+            <span className="text-xs">Conciliados</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.conciliados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+
+        <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-lg text-white">
+          <div className="flex items-center gap-2 mb-1">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-xs">Não Conciliados</span>
+          </div>
+          <p className="text-lg font-bold">R$ {totais.naoConciliados.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+        </div>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       </div>
 
       {/* Filtros */}
       <div className="flex flex-wrap gap-3 mb-6 p-4 bg-card rounded-lg">
+<<<<<<< HEAD
         {/* ... Filtros ... */}
+=======
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por fornecedor, descrição, categoria, valor..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-80"
+          />
+        </div>
+        
+        <Select value={filtroTipo} onValueChange={setFiltroTipo}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Todos os tipos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os tipos</SelectItem>
+            <SelectItem value="receita">Receita</SelectItem>
+            <SelectItem value="despesa">Despesa</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroStatus} onValueChange={setFiltroStatus}>
+          <SelectTrigger className="w-40">
+            <SelectValue placeholder="Todos os status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os status</SelectItem>
+            <SelectItem value="pago">Pago</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroAno} onValueChange={setFiltroAno}>
+          <SelectTrigger className="w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {anos.map(ano => (
+              <SelectItem key={ano} value={ano}>{ano}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroMes} onValueChange={setFiltroMes}>
+          <SelectTrigger className="w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {meses.map(mes => (
+              <SelectItem key={mes} value={mes}>
+                {mes.charAt(0).toUpperCase() + mes.slice(1)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={filtroConciliacao} onValueChange={setFiltroConciliacao}>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Conciliação" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Conciliação</SelectItem>
+            <SelectItem value="conciliado">Conciliado</SelectItem>
+            <SelectItem value="pendente">Pendente</SelectItem>
+          </SelectContent>
+        </Select>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       </div>
 
       {/* Tabela */}
@@ -395,12 +584,15 @@ const Despesas = () => {
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
+<<<<<<< HEAD
                 <th className="p-4 text-left">
                   <Checkbox
                     checked={despesasSelecionadas.length === despesasFiltradas.length && despesasFiltradas.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                 <th className="text-left p-4 font-medium">FORNECEDOR</th>
                 <th className="text-left p-4 font-medium">TIPO</th>
                 <th className="text-left p-4 font-medium">VALOR</th>
@@ -412,6 +604,7 @@ const Despesas = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
+<<<<<<< HEAD
               {despesasFiltradas.map((despesa) => (
                 <tr key={despesa.id} className="hover:bg-muted/30">
                   <td className="p-4">
@@ -420,6 +613,10 @@ const Despesas = () => {
                       onCheckedChange={() => handleSelectDespesa(despesa)}
                     />
                   </td>
+=======
+              {despesasFiltradas.map((despesa, index) => (
+                <tr key={index} className="hover:bg-muted/30">
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   <td className="p-4">
                     <div>
                       <p className="font-medium">{despesa.fornecedor?.nome || 'N/A'}</p>
@@ -442,7 +639,11 @@ const Despesas = () => {
                   </td>
                   <td className="p-4">
                     {(() => {
+<<<<<<< HEAD
                       const status = despesa.status || 'pendente';
+=======
+                      const status = despesa.status || 'pago_total';
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                       const statusConfig = {
                         'pendente': { label: 'Pendente', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
                         'pago_parcial': { label: 'Pago Parcial', bgColor: 'bg-orange-100', textColor: 'text-orange-800' },
@@ -471,6 +672,23 @@ const Despesas = () => {
                       <Button variant="ghost" size="sm">
                         <Edit className="h-4 w-4" />
                       </Button>
+<<<<<<< HEAD
+=======
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          setDespesaSelecionada(despesa);
+                          setModalPagamentoAberto(true);
+                        }}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <GitMerge className="h-4 w-4" />
+                      </Button>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                       <Button variant="ghost" size="sm" className="text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -487,6 +705,7 @@ const Despesas = () => {
         isOpen={modalPagamentoAberto}
         onClose={() => {
           setModalPagamentoAberto(false);
+<<<<<<< HEAD
           setDespesasSelecionadas([]);
         }}
         onSuccess={() => {
@@ -498,9 +717,27 @@ const Despesas = () => {
           console.log('✅ [Despesas] Estado atualizado com novas despesas');
         }}
         despesas={despesasSelecionadas}
+=======
+          setDespesaSelecionada(null);
+        }}
+        onSuccess={() => {
+          const dadosDespesas = financialDataService.getDespesas();
+          // Recalcular status de conciliação após pagamento
+          const despesasComConciliacao = dadosDespesas.map(despesa => ({
+            ...despesa,
+            conciliado: calcularStatusConciliacao(despesa.id)
+          }));
+          setDespesas(despesasComConciliacao);
+        }}
+        despesa={despesaSelecionada}
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       />
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Despesas;
+=======
+export default Despesas;
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92

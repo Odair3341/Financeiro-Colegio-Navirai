@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+<<<<<<< HEAD
   define: {
     global: 'globalThis',
     'process.env': {},
@@ -26,4 +27,6 @@ export default defineConfig(({ mode }) => ({
   optimizeDeps: {
     exclude: ['pg', 'pg-native'],
   },
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 }));

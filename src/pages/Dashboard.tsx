@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   Upload,
   Info,
+<<<<<<< HEAD
   ArrowRight,
   FileText,
   Calendar,
@@ -21,6 +22,9 @@ import {
   AlertCircle,
   AlertTriangle,
   X
+=======
+  ArrowRight
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import ImportOFXInstructions from "@/components/ImportOFXInstructions";
@@ -54,6 +58,7 @@ const Dashboard = () => {
       const lancamentos = financialDataService.getLancamentosSistema();
       
       // Calcular valores
+<<<<<<< HEAD
       const totalDespesas = Array.isArray(despesas) ? despesas.reduce((acc, despesa) => acc + despesa.valor, 0) : 0;
       const totalPago = Array.isArray(pagamentos) ? pagamentos.reduce((acc, pag) => acc + pag.valor, 0) : 0;
       const pendentes = totalDespesas - totalPago;
@@ -62,6 +67,16 @@ const Dashboard = () => {
       
       // Dados de conciliação (mock por enquanto)
       const totalMovimentacoes = (Array.isArray(movimentacoes) ? movimentacoes.length : 0) + (Array.isArray(lancamentos) ? lancamentos.length : 0);
+=======
+      const totalDespesas = despesas.reduce((acc, despesa) => acc + despesa.valor, 0);
+      const totalPago = pagamentos.reduce((acc, pag) => acc + pag.valor, 0);
+      const pendentes = totalDespesas - totalPago;
+      const saldoBancario = contas.filter(c => c.ativa).reduce((acc, conta) => acc + conta.saldo, 0);
+      const contasAtivas = contas.filter(c => c.ativa).length;
+      
+      // Dados de conciliação (mock por enquanto)
+      const totalMovimentacoes = movimentacoes.length + lancamentos.length;
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       const conciliadas = Math.floor(totalMovimentacoes * 0.3); // 30% conciliadas
       const pendentesConc = totalMovimentacoes - conciliadas;
       const discrepancias = Math.floor(totalMovimentacoes * 0.1); // 10% com discrepância
@@ -127,6 +142,7 @@ const Dashboard = () => {
   ];
 
   return (
+<<<<<<< HEAD
     <main className="container-elegant spacing-lg animate-fade-in">
       {/* TOPO */}
       <div className="glass-morphism-strong shadow-elevated depth-hover card-spacing flex flex-col md:flex-row items-center justify-between section-spacing rounded-3xl">
@@ -150,16 +166,48 @@ const Dashboard = () => {
             <SelectContent className="rounded-xl border-2">
               {years.map(year => (
                 <SelectItem key={year} value={year.toString()} className="rounded-lg">{year}</SelectItem>
+=======
+    <main className="p-8">
+      {/* TOPO */}
+      <div className="bg-card p-6 rounded-xl shadow-md flex flex-col md:flex-row items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-primary">Dashboard Financeiro</h2>
+          <p className="text-muted-foreground">Visão geral das suas finanças</p>
+        </div>
+        <div className="flex space-x-3 mt-4 md:mt-0">
+          <Button variant="destructive" className="flex items-center gap-2" onClick={handleClear}>
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            Limpar Dados
+          </Button>
+          <Select value={selectedYear} onValueChange={setSelectedYear}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              {years.map(year => (
+                <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
               ))}
             </SelectContent>
           </Select>
           <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+<<<<<<< HEAD
             <SelectTrigger className="w-40 smooth-transition hover-scale rounded-xl border-2">
               <SelectValue placeholder="Mês" />
             </SelectTrigger>
             <SelectContent className="rounded-xl border-2">
               {months.map(month => (
                 <SelectItem key={month} value={month} className="rounded-lg">
+=======
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              {months.map(month => (
+                <SelectItem key={month} value={month}>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   {month.charAt(0).toUpperCase() + month.slice(1)}
                 </SelectItem>
               ))}
@@ -169,6 +217,7 @@ const Dashboard = () => {
       </div>
 
       {/* KPIs PRINCIPAIS */}
+<<<<<<< HEAD
       <div className="grid-elegant gap-lg mb-12">
         {/* Receita */}
         <div className="modern-card card-success shadow-floating depth-hover card-spacing text-white animate-scale-in relative z-10 rounded-2xl">
@@ -244,10 +293,68 @@ const Dashboard = () => {
               Resultado líquido
             </span>
           </div>
+=======
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        {/* Receita */}
+        <div 
+          className="p-6 rounded-xl shadow-lg hover:scale-105 transition text-white" 
+          style={{ background: 'var(--gradient-success)' }}
+        >
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Receitas Totais</span>
+            <TrendingUp className="h-5 w-5" />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            R$ {dashboardData.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+
+        {/* Despesas */}
+        <div 
+          className="p-6 rounded-xl shadow-lg hover:scale-105 transition text-white"
+          style={{ background: 'var(--gradient-danger)' }}
+        >
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Despesas Totais</span>
+            <TrendingDown className="h-5 w-5" />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            R$ {dashboardData.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+
+        {/* Pagamentos Pendentes */}
+        <div 
+          className="p-6 rounded-xl shadow-lg hover:scale-105 transition text-white"
+          style={{ background: 'var(--gradient-warning)' }}
+        >
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Pagamentos Pendentes</span>
+            <Clock className="h-5 w-5" />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            R$ {dashboardData.pagamentosPendentes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+
+        {/* Saldo */}
+        <div 
+          className="p-6 rounded-xl shadow-lg hover:scale-105 transition text-white"
+          style={{ background: 'var(--gradient-info)' }}
+        >
+          <div className="flex justify-between items-center">
+            <span className="text-sm">Saldo</span>
+            <Wallet className="h-5 w-5" />
+          </div>
+          <p className="text-2xl font-bold mt-2">
+            {(dashboardData.receitas - dashboardData.despesas) >= 0 ? '' : '-'}R$ {Math.abs(dashboardData.receitas - dashboardData.despesas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
         </div>
       </div>
 
       {/* SALDOS BANCÁRIOS */}
+<<<<<<< HEAD
       <div className="animate-slide-up" style={{animationDelay: '0.4s'}}>
         <h3 className="text-heading-lg font-poppins text-gradient text-shadow mb-6 flex items-center gap-3">
           <div className="icon-elegant icon-lg icon-primary">
@@ -379,6 +486,51 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
+=======
+      <h3 className="text-xl font-bold text-cyan-400 mb-4 flex items-center gap-2">
+        <Building2 className="h-5 w-5" />
+        Saldos Bancários
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Saldo Total Bancário</p>
+          <p className="text-2xl font-bold text-cyan-400">
+            R$ {dashboardData.saldoBancario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </p>
+        </div>
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Contas Ativas</p>
+          <p className="text-2xl font-bold text-green-400">{dashboardData.contasAtivas}</p>
+        </div>
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Investimento</p>
+          <p className="text-2xl font-bold text-pink-400">R$ 0,00</p>
+        </div>
+      </div>
+
+
+      {/* CONCILIAÇÃO */}
+      <h3 className="text-xl font-bold text-pink-400 mb-4 flex items-center gap-2">
+        <GitMerge className="h-5 w-5" />
+        Conciliação Bancária
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Total de Transações</p>
+          <p className="text-2xl font-bold">{dashboardData.totalTransacoes}</p>
+        </div>
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Conciliadas</p>
+          <p className="text-2xl font-bold text-green-400">{dashboardData.conciliadas}</p>
+        </div>
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Pendentes</p>
+          <p className="text-2xl font-bold text-yellow-400">{dashboardData.pendentes}</p>
+        </div>
+        <div className="bg-card p-6 rounded-xl shadow-md">
+          <p className="text-muted-foreground text-sm">Discrepâncias</p>
+          <p className="text-2xl font-bold text-red-400">{dashboardData.discrepancias}</p>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
         </div>
       </div>
     </main>

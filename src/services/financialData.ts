@@ -1,6 +1,9 @@
+<<<<<<< HEAD
 import { v4 as uuidv4 } from 'uuid';
 import { FinancialDataAdapter } from './financialDataAdapter';
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 // Tipos principais do sistema financeiro
 export interface ContaBancaria {
   id: string
@@ -250,6 +253,7 @@ const mockDespesas: Despesa[] = [
 
 // Serviços de dados (usando localStorage para persistência)
 class FinancialDataService {
+<<<<<<< HEAD
   private idCounter: number = 0;
   private adapter: FinancialDataAdapter;
 
@@ -266,6 +270,11 @@ class FinancialDataService {
     this.idCounter = (this.idCounter + 1) % 10000; // Increased to 10000 to reduce collision chance
     const randomSuffix = Math.floor(Math.random() * 1000); // Add random component
     return `${timestamp}_${this.idCounter}_${randomSuffix}`;
+=======
+  constructor() {
+    // Garantir que exista pelo menos uma empresa padrão
+    this.ensureDefaultEmpresa()
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   private ensureDefaultEmpresa(): void {
@@ -298,6 +307,7 @@ class FinancialDataService {
 
   // Contas Bancárias
   getContasBancarias(): ContaBancaria[] {
+<<<<<<< HEAD
     return this.adapter.getContasBancariasSync();
   }
 
@@ -350,6 +360,41 @@ class FinancialDataService {
 
   async deleteContaBancariaAsync(id: string): Promise<boolean> {
     return await this.adapter.deleteContaBancaria(id);
+=======
+    return this.loadFromStorage('contas_bancarias', []) // Não usar mock por padrão
+  }
+
+  saveContaBancaria(conta: Omit<ContaBancaria, 'id' | 'createdAt' | 'updatedAt'>): ContaBancaria {
+    const contas = this.getContasBancarias()
+    const newConta: ContaBancaria = {
+      ...conta,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    contas.push(newConta)
+    this.saveToStorage('contas_bancarias', contas)
+    return newConta
+  }
+
+  updateContaBancaria(id: string, updates: Partial<ContaBancaria>): ContaBancaria | null {
+    const contas = this.getContasBancarias()
+    const index = contas.findIndex(c => c.id === id)
+    if (index === -1) return null
+    
+    contas[index] = { ...contas[index], ...updates, updatedAt: new Date().toISOString() }
+    this.saveToStorage('contas_bancarias', contas)
+    return contas[index]
+  }
+
+  deleteContaBancaria(id: string): boolean {
+    const contas = this.getContasBancarias()
+    const filtered = contas.filter(c => c.id !== id)
+    if (filtered.length === contas.length) return false
+    
+    this.saveToStorage('contas_bancarias', filtered)
+    return true
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   // Empresas (Sistema independente)
@@ -361,7 +406,11 @@ class FinancialDataService {
     const empresas = this.getEmpresas()
     const newEmpresa: Empresa = {
       ...empresa,
+<<<<<<< HEAD
       id: this.generateUniqueId(),
+=======
+      id: Date.now().toString(),
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -391,6 +440,7 @@ class FinancialDataService {
 
   // Fornecedores
   getFornecedores(): Fornecedor[] {
+<<<<<<< HEAD
     return this.adapter.getFornecedoresSync();
   }
 
@@ -442,10 +492,46 @@ class FinancialDataService {
 
   async deleteFornecedorAsync(id: string): Promise<boolean> {
     return await this.adapter.deleteFornecedor(id);
+=======
+    return this.loadFromStorage('fornecedores', []) // Não usar mock por padrão
+  }
+
+  saveFornecedor(fornecedor: Omit<Fornecedor, 'id' | 'createdAt' | 'updatedAt'>): Fornecedor {
+    const fornecedores = this.getFornecedores()
+    const newFornecedor: Fornecedor = {
+      ...fornecedor,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    fornecedores.push(newFornecedor)
+    this.saveToStorage('fornecedores', fornecedores)
+    return newFornecedor
+  }
+
+  updateFornecedor(id: string, updates: Partial<Fornecedor>): Fornecedor | null {
+    const fornecedores = this.getFornecedores()
+    const index = fornecedores.findIndex(f => f.id === id)
+    if (index === -1) return null
+    
+    fornecedores[index] = { ...fornecedores[index], ...updates, updatedAt: new Date().toISOString() }
+    this.saveToStorage('fornecedores', fornecedores)
+    return fornecedores[index]
+  }
+
+  deleteFornecedor(id: string): boolean {
+    const fornecedores = this.getFornecedores()
+    const filtered = fornecedores.filter(f => f.id !== id)
+    if (filtered.length === fornecedores.length) return false
+    
+    this.saveToStorage('fornecedores', filtered)
+    return true
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   // Despesas
   getDespesas(): Despesa[] {
+<<<<<<< HEAD
     return this.adapter.getDespesasSync();
   }
 
@@ -497,10 +583,64 @@ class FinancialDataService {
 
   async deleteDespesaAsync(id: string): Promise<boolean> {
     return await this.adapter.deleteDespesa(id);
+=======
+    const despesas = this.loadFromStorage('despesas', []) // Não usar mock por padrão
+    const fornecedores = this.getFornecedores()
+    const empresas = this.getEmpresas()
+    
+    // Adicionar dados do fornecedor e empresa
+    return despesas.map(despesa => ({
+      ...despesa,
+      fornecedor: fornecedores.find(f => f.id === despesa.fornecedorId),
+      empresa: empresas.find(e => e.id === despesa.empresaId)
+    }))
+  }
+
+  saveDespesa(despesa: Omit<Despesa, 'id' | 'createdAt' | 'updatedAt'>): Despesa {
+    const despesas = this.getDespesas()
+    const newDespesa: Despesa = {
+      ...despesa,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    despesas.push(newDespesa)
+    this.saveToStorage('despesas', despesas)
+    return newDespesa
+  }
+
+  updateDespesa(id: string, updates: Partial<Despesa>): Despesa | null {
+    console.log(`DEBUG: Tentando atualizar despesa ${id} com:`, updates)
+    const despesas = this.getDespesas()
+    console.log(`DEBUG: Total de despesas encontradas: ${despesas.length}`)
+    console.log(`DEBUG: IDs das despesas:`, despesas.map(d => d.id))
+    const index = despesas.findIndex(d => d.id === id)
+    console.log(`DEBUG: Índice da despesa encontrada: ${index}`)
+    if (index === -1) {
+      console.log(`DEBUG: Despesa ${id} não encontrada para atualização`)
+      return null
+    }
+    
+    const despesaAtualizada = { ...despesas[index], ...updates, updatedAt: new Date().toISOString() }
+    despesas[index] = despesaAtualizada
+    console.log(`DEBUG: Despesa atualizada:`, despesaAtualizada)
+    this.saveToStorage('despesas', despesas)
+    return despesas[index]
+  }
+
+  deleteDespesa(id: string): boolean {
+    const despesas = this.getDespesas()
+    const filtered = despesas.filter(d => d.id !== id)
+    if (filtered.length === despesas.length) return false
+    
+    this.saveToStorage('despesas', filtered)
+    return true
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   // Pagamentos
   getPagamentos(): Pagamento[] {
+<<<<<<< HEAD
     return this.adapter.getPagamentos() as Pagamento[]; // Temporário para compatibilidade
   }
 
@@ -524,6 +664,9 @@ class FinancialDataService {
 
   async savePagamentoAsync(pagamento: Omit<Pagamento, 'id' | 'createdAt'>): Promise<Pagamento> {
     return await this.adapter.savePagamento(pagamento);
+=======
+    return this.loadFromStorage('pagamentos', [])
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   // Recebimentos
@@ -532,16 +675,24 @@ class FinancialDataService {
   }
 
   registrarPagamento(pagamento: Omit<Pagamento, 'id' | 'createdAt'>): Pagamento {
+<<<<<<< HEAD
     console.log('🔄 Iniciando registrarPagamento:', pagamento)
     
     const pagamentos = this.getPagamentos()
     const newPagamento: Pagamento = {
       ...pagamento,
       id: this.generateUniqueId(),
+=======
+    const pagamentos = this.getPagamentos()
+    const newPagamento: Pagamento = {
+      ...pagamento,
+      id: Date.now().toString(),
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       createdAt: new Date().toISOString()
     }
     pagamentos.push(newPagamento)
     this.saveToStorage('pagamentos', pagamentos)
+<<<<<<< HEAD
     console.log('💾 Pagamento salvo no localStorage:', newPagamento)
 
     // Verificar se o pagamento foi realmente salvo
@@ -557,6 +708,12 @@ class FinancialDataService {
     const despesaAtualizada = this.getDespesas().find(d => d.id === pagamento.despesaId)
     console.log('📊 Despesa após atualização:', despesaAtualizada)
 
+=======
+
+    // Atualizar status da despesa
+    this.atualizarStatusDespesa(pagamento.despesaId)
+
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     // Buscar dados da despesa para enriquecer o lançamento
     const despesa = this.getDespesas().find(d => d.id === pagamento.despesaId)
 
@@ -581,7 +738,11 @@ class FinancialDataService {
     const recebimentos = this.getRecebimentos()
     const newRecebimento: Recebimento = {
       ...recebimento,
+<<<<<<< HEAD
       id: this.generateUniqueId(),
+=======
+      id: Date.now().toString(),
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       createdAt: new Date().toISOString()
     }
     recebimentos.push(newRecebimento)
@@ -604,6 +765,7 @@ class FinancialDataService {
     return newRecebimento
   }
 
+<<<<<<< HEAD
   // Função para popular dados de teste
   popularDadosTeste(): void {
     // Adicionar fornecedor ENERGISA se não existir
@@ -778,6 +940,39 @@ class FinancialDataService {
     const despesasAtualizadas = this.getDespesas()
     const despesaAtualizada = despesasAtualizadas.find(d => d.id === despesaId)
     console.log('🔍 [atualizarStatusDespesa] Status após atualização:', despesaAtualizada?.status)
+=======
+  private atualizarStatusDespesa(despesaId: string): void {
+    console.log(`DEBUG: Atualizando status da despesa ${despesaId}`)
+    const despesas = this.getDespesas()
+    const pagamentos = this.getPagamentos()
+    
+    const despesa = despesas.find(d => d.id === despesaId)
+    if (!despesa) {
+      console.log(`DEBUG: Despesa ${despesaId} não encontrada`)
+      return
+    }
+
+    const pagamentosDespesa = pagamentos.filter(p => p.despesaId === despesaId)
+    console.log(`DEBUG: Encontrados ${pagamentosDespesa.length} pagamentos para despesa ${despesaId}`)
+    
+    // Garantir arredondamento correto para evitar problemas de ponto flutuante
+    const totalPago = Math.round(pagamentosDespesa.reduce((total, p) => total + p.valor, 0) * 100) / 100
+    const valorDespesa = Math.round(despesa.valor * 100) / 100
+    
+    console.log(`DEBUG: Total pago: R$ ${totalPago}, Valor despesa: R$ ${valorDespesa}`)
+
+    let novoStatus: Despesa['status'] = 'pendente'
+    if (totalPago >= valorDespesa) {
+      novoStatus = 'pago_total'
+    } else if (totalPago > 0) {
+      novoStatus = 'pago_parcial'
+    } else if (new Date(despesa.vencimento) < new Date()) {
+      novoStatus = 'vencido'
+    }
+
+    console.log(`DEBUG: Novo status da despesa ${despesaId}: ${novoStatus}`)
+    this.updateDespesa(despesaId, { valorPago: totalPago, status: novoStatus })
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 
   // Lançamentos do Sistema
@@ -789,7 +984,11 @@ class FinancialDataService {
     const lancamentos = this.getLancamentosSistema()
     const newLancamento: LancamentoSistema = {
       ...lancamento,
+<<<<<<< HEAD
       id: this.generateUniqueId(),
+=======
+      id: Date.now().toString(),
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       // Se a data não foi fornecida, usar a data atual
       data: lancamento.data || new Date().toISOString().split('T')[0],
       createdAt: new Date().toISOString()
@@ -854,7 +1053,11 @@ class FinancialDataService {
     const conciliacoes = this.getConciliacoes()
     const newConciliacao: Conciliacao = {
       ...conciliacao,
+<<<<<<< HEAD
       id: this.generateUniqueId(),
+=======
+      id: Date.now().toString(),
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
       createdAt: new Date().toISOString()
     }
     conciliacoes.push(newConciliacao)
@@ -887,6 +1090,7 @@ class FinancialDataService {
     return String(text || '').replace(/\D/g, '')
   }
 
+<<<<<<< HEAD
   // Corrigir IDs duplicados nas despesas
   fixDuplicateIds(): { fixedDespesas: number } {
     console.log('🔧 [fixDuplicateIds] Iniciando correção de IDs duplicados...')
@@ -939,6 +1143,8 @@ class FinancialDataService {
     return { fixedDespesas: despesasCorrigidasCount }
   }
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   // Remove duplicatas em fornecedores e despesas e mantém referências
   removeDuplicates(): { removedFornecedores: number; removedDespesas: number } {
     // Fornecedores: documento (apenas dígitos) ou nome normalizado
@@ -1004,6 +1210,7 @@ class FinancialDataService {
 
   // Limpa todos os dados persistidos (mantém estrutura vazia)
   clearAllData(): void {
+<<<<<<< HEAD
     // Executar limpeza assíncrona em background
     this.adapter.clearAllData();
   }
@@ -1031,3 +1238,21 @@ class FinancialDataService {
 export const financialDataService = new FinancialDataService();
 export { FinancialDataService };
 export { ExcelImportService } from './excelImport';
+=======
+    const entities = [
+      'contas_bancarias',
+      'empresas',
+      'fornecedores',
+      'despesas',
+      'pagamentos',
+      'recebimentos',
+      'lancamentos_sistema',
+      'movimentacoes_bancarias',
+      'conciliacoes'
+    ]
+    entities.forEach((e) => this.saveToStorage(e, [] as any))
+  }
+}
+
+export const financialDataService = new FinancialDataService()
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92

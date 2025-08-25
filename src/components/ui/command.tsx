@@ -21,7 +21,13 @@ const Command = React.forwardRef<
 ))
 Command.displayName = CommandPrimitive.displayName
 
+<<<<<<< HEAD
 const CommandDialog = ({ children, ...props }: DialogProps) => {
+=======
+interface CommandDialogProps extends DialogProps {}
+
+const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   return (
     <Dialog {...props}>
       <DialogContent className="overflow-hidden p-0 shadow-lg">

@@ -25,7 +25,11 @@ interface AbaInfo {
   registros: number;
   colunas: number;
   ativa: boolean;
+<<<<<<< HEAD
   dados?: Record<string, unknown>[]; // Dados reais da planilha
+=======
+  dados?: any[]; // Dados reais da planilha
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 }
 
 const ImportacaoExcel = () => {

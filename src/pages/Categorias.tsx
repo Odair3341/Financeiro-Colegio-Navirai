@@ -37,6 +37,7 @@ const Categorias = () => {
   ];
 
   useEffect(() => {
+<<<<<<< HEAD
     const carregarCategorias = () => {
       // Carregar do localStorage ou criar categorias padrão
       const categoriasSalvas = localStorage.getItem('financeflow_categorias');
@@ -65,6 +66,37 @@ const Categorias = () => {
     carregarCategorias();
   }, []);
 
+=======
+    carregarCategorias();
+  }, []);
+
+  const carregarCategorias = () => {
+    // Carregar do localStorage ou criar categorias padrão
+    const categoriasSalvas = localStorage.getItem('financeflow_categorias');
+    if (categoriasSalvas) {
+      setCategorias(JSON.parse(categoriasSalvas));
+    } else {
+      // Categorias padrão
+      const categoriasDefault: Categoria[] = [
+        // Receitas
+        { id: '1', nome: 'Vendas', tipo: 'receita', cor: '#10b981', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '2', nome: 'Prestação de Serviços', tipo: 'receita', cor: '#3b82f6', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '3', nome: 'PIX Recebidos', tipo: 'receita', cor: '#06b6d4', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '4', nome: 'Mensalidades', tipo: 'receita', cor: '#8b5cf6', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        
+        // Despesas
+        { id: '5', nome: 'Fornecedores', tipo: 'despesa', cor: '#ef4444', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '6', nome: 'PIX Enviados', tipo: 'despesa', cor: '#f59e0b', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '7', nome: 'Pagamentos com Cartão', tipo: 'despesa', cor: '#ec4899', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '8', nome: 'Boletos', tipo: 'despesa', cor: '#84cc16', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+        { id: '9', nome: 'Despesas Operacionais', tipo: 'despesa', cor: '#f97316', ativo: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+      ];
+      setCategorias(categoriasDefault);
+      localStorage.setItem('financeflow_categorias', JSON.stringify(categoriasDefault));
+    }
+  };
+
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   const salvarCategoria = () => {
     if (!formData.nome.trim()) {
       toast({

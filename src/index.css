@@ -1,7 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+<<<<<<< HEAD
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -110,6 +113,7 @@ All colors MUST be HSL.
     --sidebar-border: 215 27.9% 16.9%;
     --sidebar-ring: 263 85% 70%;
     
+<<<<<<< HEAD
     /* Enhanced Color Palette */
     --color-primary: #6366f1;
     --color-primary-light: #818cf8;
@@ -169,6 +173,13 @@ All colors MUST be HSL.
     --shadow-glow-success: 0 0 20px rgba(34, 197, 94, 0.3);
     --shadow-glow-warning: 0 0 20px rgba(251, 191, 36, 0.3);
     --shadow-glow-danger: 0 0 20px rgba(239, 68, 68, 0.3);
+=======
+    /* Dashboard gradients */
+    --gradient-success: linear-gradient(135deg, hsl(142 69% 58%), hsl(160 84% 39%));
+    --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%), hsl(348 83% 47%));
+    --gradient-warning: linear-gradient(135deg, hsl(48 96% 53%), hsl(31 91% 51%));
+    --gradient-info: linear-gradient(135deg, hsl(263 85% 70%), hsl(220 91% 50%));
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   }
 }
 
@@ -231,6 +242,7 @@ All colors MUST be HSL.
   .gradient-success {
     background: var(--gradient-success);
   }
+<<<<<<< HEAD
   
   /* Cards modernos e elegantes */
   .modern-card {
@@ -865,3 +877,6 @@ All colors MUST be HSL.
     .border-danger { border-color: var(--color-danger); }
     .border-info { border-color: var(--color-info); }
   }
+=======
+}
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92

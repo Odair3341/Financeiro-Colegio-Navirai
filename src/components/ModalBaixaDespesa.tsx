@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -22,33 +25,59 @@ import { Despesa, ContaBancaria, Empresa, financialDataService } from "@/service
 
 const pagamentoSchema = z.object({
   contaBancariaId: z.string().min(1, "Conta bancária é obrigatória"),
+<<<<<<< HEAD
   dataPagamento: z.date(),
   descricao: z.string().optional(),
+=======
+  valor: z.number().min(0.01, "Valor deve ser maior que zero"),
+  dataPagamento: z.date(),
+  descricao: z.string().min(1, "Descrição é obrigatória"),
+  numeroDocumento: z.string().optional()
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 })
 
 type PagamentoFormData = z.infer<typeof pagamentoSchema>
 
 interface ModalBaixaDespesaProps {
+<<<<<<< HEAD
   despesas: Despesa[]
+=======
+  despesa: Despesa | null
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
+<<<<<<< HEAD
 export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
   const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
   const [totalAPagar, setTotalAPagar] = useState(0)
+=======
+export function ModalBaixaDespesa({ despesa, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
+  const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
+  const [empresas, setEmpresas] = useState<Empresa[]>([])
+  const [valorRestante, setValorRestante] = useState(0)
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
 
   const form = useForm<PagamentoFormData>({
     resolver: zodResolver(pagamentoSchema),
     defaultValues: {
       contaBancariaId: "",
+<<<<<<< HEAD
       dataPagamento: new Date(),
       descricao: "",
+=======
+      valor: 0,
+      dataPagamento: new Date(),
+      descricao: despesa ? `Pagamento - ${despesa.descricao}` : "Pagamento",
+      numeroDocumento: ""
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     }
   })
 
   useEffect(() => {
+<<<<<<< HEAD
     if (isOpen && despesas.length > 0) {
       const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
       setContasBancarias(contas)
@@ -65,10 +94,34 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
   }, [isOpen, despesas, form])
 
   if (despesas.length === 0) {
+=======
+    if (isOpen && despesa) {
+      const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
+      setContasBancarias(contas)
+      
+      const empresasData = financialDataService.getEmpresas()
+      setEmpresas(empresasData)
+      
+      const restante = despesa.valor - (despesa.valorPago || 0)
+      setValorRestante(restante)
+      
+      form.reset({
+        contaBancariaId: "",
+        valor: restante,
+        dataPagamento: new Date(),
+        descricao: `Pagamento - ${despesa.descricao}`,
+        numeroDocumento: ""
+      })
+    }
+  }, [isOpen, despesa, form])
+
+  if (!despesa) {
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
     return null
   }
 
   const onSubmit = (data: PagamentoFormData) => {
+<<<<<<< HEAD
     try {
       console.log('🚀 DEBUG MODAL: Iniciando pagamento em lote')
       console.log('📄 DEBUG MODAL: Despesas selecionadas:', despesas.map(d => d.id))
@@ -102,6 +155,50 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao registrar os pagamentos.",
+=======
+    if (!despesa) return
+    
+    try {
+      console.log('DEBUG MODAL: Despesa ID:', despesa.id)
+      console.log('DEBUG MODAL: Despesa valor:', despesa.valor)
+      console.log('DEBUG MODAL: Despesa valorPago:', despesa.valorPago)
+      
+      const valorRestante = despesa.valor - (despesa.valorPago || 0)
+      
+      if (data.valor > valorRestante) {
+        toast({
+          title: "Valor inválido",
+          description: "O valor do pagamento não pode ser maior que o valor restante da despesa.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      const pagamentoData = {
+        despesaId: despesa.id,
+        contaBancariaId: data.contaBancariaId,
+        valor: data.valor,
+        dataPagamento: format(data.dataPagamento, 'yyyy-MM-dd'),
+        descricao: data.descricao,
+        numeroDocumento: data.numeroDocumento || undefined
+      }
+
+      console.log('DEBUG MODAL: Registrando pagamento:', pagamentoData)
+      financialDataService.registrarPagamento(pagamentoData)
+      
+      toast({
+        title: "Pagamento registrado",
+        description: "O pagamento foi registrado com sucesso e a despesa foi atualizada."
+      })
+      
+      onClose()
+      onSuccess()
+    } catch (error) {
+      console.error('DEBUG MODAL: Erro ao registrar pagamento:', error)
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao registrar o pagamento.",
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
         variant: "destructive"
       })
     }
@@ -114,10 +211,38 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
     }).format(value)
   }
 
+<<<<<<< HEAD
+=======
+  const handleValorPreDefinido = (tipo: 'total' | 'metade') => {
+    if (!despesa) return
+    const valorRestante = despesa.valor - (despesa.valorPago || 0)
+    const valor = tipo === 'total' ? valorRestante : valorRestante / 2
+    form.setValue('valor', valor)
+  }
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pendente: { label: "Pendente", variant: "secondary" as const },
+      pago_parcial: { label: "Pago Parcial", variant: "default" as const },
+      pago_total: { label: "Pago", variant: "default" as const },
+      vencido: { label: "Vencido", variant: "destructive" as const }
+    }
+    
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente
+    
+    return (
+      <Badge variant={config.variant}>
+        {config.label}
+      </Badge>
+    )
+  }
+
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
+<<<<<<< HEAD
           <DialogTitle>Baixar Despesas em Lote</DialogTitle>
           <DialogDescription>
             Registre o pagamento para as {despesas.length} despesas selecionadas.
@@ -137,6 +262,49 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Valor Total a Pagar:</span>
                 <p className="font-bold text-lg">{formatCurrency(totalAPagar)}</p>
+=======
+          <DialogTitle>Baixar Despesa</DialogTitle>
+          <DialogDescription>
+            Registre o pagamento da despesa selecionada
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Informações da Despesa */}
+        <Card className="mb-4">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  {despesa.descricao}
+                </CardTitle>
+                <CardDescription>
+                  {despesa.empresa?.nome} • {despesa.fornecedor?.nome} • {despesa.categoria}
+                </CardDescription>
+              </div>
+              {getStatusBadge(despesa.status)}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-muted-foreground">Valor Total:</span>
+                <p className="font-bold text-lg">{formatCurrency(despesa.valor)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Valor Pago:</span>
+                <p className="font-medium text-green-600">{formatCurrency(despesa.valorPago)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Valor Restante:</span>
+                <p className="font-bold text-orange-600">{formatCurrency(valorRestante)}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Vencimento:</span>
+                <p className="font-medium">
+                  {format(new Date(despesa.vencimento), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
               </div>
             </div>
           </CardContent>
@@ -149,7 +317,11 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
               name="contaBancariaId"
               render={({ field }) => (
                 <FormItem>
+<<<<<<< HEAD
                   <FormLabel>Conta Bancária de Origem</FormLabel>
+=======
+                  <FormLabel>Conta Bancária</FormLabel>
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -172,6 +344,50 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
               )}
             />
 
+<<<<<<< HEAD
+=======
+            <div className="space-y-2">
+              <FormField
+                control={form.control}
+                name="valor"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Valor do Pagamento</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        step="0.01" 
+                        placeholder="0.00" 
+                        {...field} 
+                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleValorPreDefinido('metade')}
+                >
+                  50% ({formatCurrency(valorRestante / 2)})
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleValorPreDefinido('total')}
+                >
+                  Total ({formatCurrency(valorRestante)})
+                </Button>
+              </div>
+            </div>
+
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
             <FormField
               control={form.control}
               name="dataPagamento"
@@ -217,9 +433,29 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
               name="descricao"
               render={({ field }) => (
                 <FormItem>
+<<<<<<< HEAD
                   <FormLabel>Descrição Geral (Opcional)</FormLabel>
                   <FormControl>
                     <Input placeholder="Ex: Pagamento de contas da semana" {...field} />
+=======
+                  <FormLabel>Descrição</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Descrição do pagamento" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="numeroDocumento"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Número do Documento (Opcional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ex: 001234, TED123, PIX456" {...field} />
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -231,7 +467,11 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                 Cancelar
               </Button>
               <Button type="submit">
+<<<<<<< HEAD
                 Registrar Pagamentos
+=======
+                Registrar Pagamento
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
               </Button>
             </div>
           </form>
@@ -239,4 +479,8 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
       </DialogContent>
     </Dialog>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 004cbcd9fddec795ff35fa159e01016265fc7d92
