@@ -20,7 +20,7 @@ import {
   Plus
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { financialDataService } from "@/services/financialData";
+import { financialDataService, type ContaBancaria } from "@/services/financialData";
 import { formatDateBR } from "@/lib/dateUtils";
 import ModalLancamentoRapido from "@/components/ModalLancamentoRapido";
 
@@ -66,7 +66,7 @@ const Conciliacao = () => {
   const { toast } = useToast();
 
   // Estado para contas bancárias reais
-  const [contas, setContas] = useState<any[]>([]);
+  const [contas, setContas] = useState<ContaBancaria[]>([]);
 
   // Carregar movimentações bancárias dinamicamente  
   const [movimentacoesBanco, setMovimentacoesBanco] = useState<MovimentacaoBanco[]>([]);

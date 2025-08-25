@@ -19,7 +19,7 @@ import {
   Trash2,
   ArrowDown
 } from "lucide-react";
-import { financialDataService } from "@/services/financialData";
+import { financialDataService, type Despesa } from "@/services/financialData";
 import { ModalBaixaDespesa } from "@/components/ModalBaixaDespesa";
 import { formatDateBR } from "@/lib/dateUtils";
 import ModalLancamentoRapido from "@/components/ModalLancamentoRapido";
@@ -33,7 +33,7 @@ const Despesas = () => {
   const [filtroConciliacao, setFiltroConciliacao] = useState("todos");
   const [busca, setBusca] = useState("");
   const [modalPagamentoAberto, setModalPagamentoAberto] = useState(false);
-  const [despesasSelecionadas, setDespesasSelecionadas] = useState<any[]>([]);
+  const [despesasSelecionadas, setDespesasSelecionadas] = useState<Despesa[]>([]);
 
   useEffect(() => {
     const dadosDespesas = financialDataService.getDespesas();

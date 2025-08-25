@@ -121,7 +121,7 @@ export class DatabaseService {
     return [];
   }
 
-  async transaction<T>(callback: (client: any) => Promise<T>): Promise<T> {
+  async transaction<T>(callback: (client: unknown) => Promise<T>): Promise<T> {
     throw new Error('Transações não disponíveis no frontend');
   }
 
