@@ -1,8 +1,21 @@
-# Welcome to your Lovable project
+# Sistema Financeiro CN
 
-## Project info
+Um sistema completo de gestão financeira pessoal desenvolvido com React, TypeScript e Tailwind CSS.
 
-**URL**: https://lovable.dev/projects/d3062d5f-f421-4e2d-8b97-26841c35dc77
+## 🚀 Funcionalidades
+
+- **Dashboard Financeiro**: Visão geral de receitas, despesas e saldo
+- **Gestão de Categorias**: Criação e organização de categorias personalizadas
+- **Controle de Despesas**: Registro e acompanhamento de gastos
+- **Gestão de Receitas**: Controle de entradas financeiras
+- **Relatórios**: Análises e gráficos financeiros
+- **Armazenamento Local**: Funciona offline usando localStorage
+- **Integração Neon PostgreSQL**: Suporte opcional para banco de dados na nuvem
+
+## 🔗 Links do Projeto
+
+**Repositório**: https://github.com/Odair3341/Sistema-Financeiro-Cn.git
+**Lovable Project**: https://lovable.dev/projects/d3062d5f-f421-4e2d-8b97-26841c35dc77
 
 ## How can I edit this code?
 
@@ -60,9 +73,29 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+## 🚀 Deploy
 
-Simply open [Lovable](https://lovable.dev/projects/d3062d5f-f421-4e2d-8b97-26841c35dc77) and click on Share -> Publish.
+### Deploy na Vercel (Recomendado)
+
+1. Conecte seu repositório GitHub à Vercel
+2. Configure as seguintes variáveis de ambiente (opcionais):
+   ```
+   VITE_DATABASE_URL=sua_url_do_neon_postgresql
+   ```
+3. O deploy será automático a cada push na branch `main`
+
+### Deploy via Lovable
+
+Alternativamente, abra [Lovable](https://lovable.dev/projects/d3062d5f-f421-4e2d-8b97-26841c35dc77) e clique em Share -> Publish.
+
+## 💾 Configuração do Banco de Dados
+
+O sistema funciona de duas formas:
+
+1. **Modo Offline (Padrão)**: Usa localStorage para armazenar dados localmente
+2. **Modo Online (Opcional)**: Conecta ao Neon PostgreSQL para sincronização na nuvem
+
+Para habilitar o modo online, configure a variável `VITE_DATABASE_URL` no arquivo `.env`
 
 ## Can I connect a custom domain to my Lovable project?
 
