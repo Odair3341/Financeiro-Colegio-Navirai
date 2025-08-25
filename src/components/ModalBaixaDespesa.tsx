@@ -1,282 +1,258 @@
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Separator } from "@/components/ui/separator"
-import { toast } from "@/hooks/use-toast"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { cn } from "@/lib/utils"
-import { CalendarIcon, DollarSign, Building2, CreditCard, Users } from "lucide-react"
-import { Despesa, ContaBancaria, Empresa, financialDataService } from "@/services/financialData"
+import React, { useState, useEffect } from 'react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Calendar as CalendarComponent } from '@/components/ui/calendar'
+import { CalendarIcon, Building2, Receipt, DollarSign } from 'lucide-react'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import { DatabaseService } from '../services/database'
+import type { Despesa, ContaBancaria, Empresa } from '../services/financialData'
 
 const pagamentoSchema = z.object({
-  contaBancariaId: z.string().min(1, "Conta bancária é obrigatória"),
-  valor: z.number().min(0.01, "Valor deve ser maior que zero"),
-  dataPagamento: z.date(),
-  descricao: z.string().min(1, "Descrição é obrigatória"),
+  contaBancariaId: z.string().min(1, 'Selecione uma conta bancária'),
+  valor: z.number().min(0.01, 'Valor deve ser maior que zero'),
+  dataPagamento: z.date({ required_error: 'Selecione a data do pagamento' }),
+  descricao: z.string().min(1, 'Descrição é obrigatória'),
   numeroDocumento: z.string().optional()
 })
 
 type PagamentoFormData = z.infer<typeof pagamentoSchema>
 
 interface ModalBaixaDespesaProps {
-  despesas: Despesa[]
   isOpen: boolean
   onClose: () => void
+  despesas: Despesa[]
   onSuccess: () => void
 }
 
-export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: ModalBaixaDespesaProps) {
+const formatCurrency = (value: number) => {
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value)
+}
+
+export function ModalBaixaDespesa({ isOpen, onClose, despesas, onSuccess }: ModalBaixaDespesaProps) {
   const [contasBancarias, setContasBancarias] = useState<ContaBancaria[]>([])
   const [empresas, setEmpresas] = useState<Empresa[]>([])
-  const [abaSelecionada, setAbaSelecionada] = useState("individual")
   const [despesaSelecionada, setDespesaSelecionada] = useState<Despesa | null>(null)
-  const [valorTotalSelecionadas, setValorTotalSelecionadas] = useState(0)
+  const [loading, setLoading] = useState(false)
 
   const form = useForm<PagamentoFormData>({
     resolver: zodResolver(pagamentoSchema),
     defaultValues: {
-      contaBancariaId: "",
+      contaBancariaId: '',
       valor: 0,
       dataPagamento: new Date(),
-      descricao: despesa ? `Pagamento - ${despesa.descricao}` : "Pagamento",
-      numeroDocumento: ""
+      descricao: '',
+      numeroDocumento: ''
     }
   })
 
   useEffect(() => {
-    if (isOpen && despesas.length > 0) {
-      const contas = financialDataService.getContasBancarias().filter(c => c.ativa)
-      setContasBancarias(contas)
-      
-      const empresasData = financialDataService.getEmpresas()
-      setEmpresas(empresasData)
-      
-      // Calcular valor total das despesas selecionadas
-      const total = despesas.reduce((sum, despesa) => {
-        const pagamentosExistentes = financialDataService.getPagamentos()
-          .filter(p => p.despesaId === despesa.id)
-          .reduce((total, p) => total + p.valor, 0)
-        return sum + (despesa.valor - pagamentosExistentes)
-      }, 0)
-      
-      setValorTotalSelecionadas(total)
-      
-      // Se apenas uma despesa, selecionar automaticamente
+    if (isOpen) {
+      carregarDados()
       if (despesas.length === 1) {
         setDespesaSelecionada(despesas[0])
-        setAbaSelecionada("individual")
+        const valorRestante = getValorRestanteDespesa(despesas[0])
+        form.setValue('valor', valorRestante)
+        form.setValue('descricao', `Pagamento - ${despesas[0].descricao}`)
       } else {
         setDespesaSelecionada(null)
-        setAbaSelecionada("individual")
+        form.reset()
       }
-      
-      form.reset({
-        contaBancariaId: "",
-        valor: despesas.length === 1 ? total : 0,
-        dataPagamento: new Date(),
-        descricao: despesas.length === 1 ? `Pagamento - ${despesas[0].descricao}` : "Pagamento",
-        numeroDocumento: ""
-      })
     }
-  }, [isOpen, despesas, form])
+  }, [isOpen, despesas])
+
+  const carregarDados = async () => {
+    try {
+      const [contasData, empresasData] = await Promise.all([
+        DatabaseService.query('SELECT * FROM contas_bancarias WHERE ativo = true ORDER BY nome'),
+        DatabaseService.query('SELECT * FROM empresas WHERE ativo = true ORDER BY nome')
+      ])
+      setContasBancarias(contasData)
+      setEmpresas(empresasData)
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error)
+      toast.error('Erro ao carregar dados')
+    }
+  }
+
+  const getValorRestanteDespesa = (despesa: Despesa): number => {
+    return despesa.valor - (despesa.valorPago || 0)
+  }
+
+  const valorTotalSelecionadas = despesas.reduce((total, despesa) => {
+    return total + getValorRestanteDespesa(despesa)
+  }, 0)
+
+  const handleValorPreDefinido = (tipo: 'metade' | 'total') => {
+    if (despesas.length === 1 || despesaSelecionada) {
+      const despesa = despesaSelecionada || despesas[0]
+      const valorRestante = getValorRestanteDespesa(despesa)
+      const valor = tipo === 'metade' ? valorRestante / 2 : valorRestante
+      form.setValue('valor', valor)
+    } else {
+      const valor = tipo === 'metade' ? valorTotalSelecionadas / 2 : valorTotalSelecionadas
+      form.setValue('valor', valor)
+    }
+  }
 
   const onSubmit = async (data: PagamentoFormData) => {
+    setLoading(true)
     try {
-      if (abaSelecionada === 'individual' && despesaSelecionada) {
-        // Pagamento individual
-        const valorRestante = getValorRestanteDespesa(despesaSelecionada)
-        
-        if (data.valor > valorRestante) {
-          toast({
-            title: "Valor inválido",
-            description: "O valor do pagamento não pode ser maior que o valor restante da despesa.",
-            variant: "destructive"
-          })
-          return
-        }
-
-        const pagamento = {
-          id: Date.now().toString(),
-          despesaId: despesaSelecionada.id,
-          contaBancariaId: data.contaBancariaId,
-          valor: data.valor,
-          dataPagamento: data.dataPagamento,
-          numeroDocumento: data.numeroDocumento || '',
-          observacoes: data.descricao || ''
-        }
-
-        financialDataService.addPagamento(pagamento)
-
-        toast({
-          title: "Sucesso!",
-          description: "Pagamento registrado com sucesso.",
-        })
-      } else if (abaSelecionada === 'lote') {
-        // Pagamento em lote
-        const valorPorDespesa = data.valor / despesas.length
-        
-        for (const despesa of despesas) {
-          const pagamento = {
-            id: `${Date.now()}_${despesa.id}`,
-            despesaId: despesa.id,
-            contaBancariaId: data.contaBancariaId,
-            valor: valorPorDespesa,
-            dataPagamento: data.dataPagamento,
-            numeroDocumento: data.numeroDocumento || '',
-            observacoes: data.descricao || `Pagamento em lote - ${despesa.descricao}`
-          }
-
-          financialDataService.addPagamento(pagamento)
-        }
-
-        toast({
-          title: "Sucesso!",
-          description: `${despesas.length} pagamentos registrados com sucesso.`,
-        })
+      const activeTab = document.querySelector('[data-state="active"]')?.getAttribute('data-value')
+      
+      if (activeTab === 'individual') {
+        await processarPagamentoIndividual(data)
+      } else {
+        await processarPagamentoLote(data)
       }
-
+      
+      toast.success('Pagamento registrado com sucesso!')
       onSuccess()
       onClose()
     } catch (error) {
-      toast({
-        title: "Erro!",
-        description: "Erro ao registrar pagamento(s).",
-        variant: "destructive"
-      })
+      console.error('Erro ao registrar pagamento:', error)
+      toast.error('Erro ao registrar pagamento')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value)
-  }
+  const processarPagamentoIndividual = async (data: PagamentoFormData) => {
+    const despesa = despesaSelecionada || despesas[0]
+    if (!despesa) throw new Error('Nenhuma despesa selecionada')
 
-  const getValorRestanteDespesa = (despesa: Despesa) => {
-    const pagamentosExistentes = financialDataService.getPagamentos()
-      .filter(p => p.despesaId === despesa.id)
-      .reduce((total, p) => total + p.valor, 0)
-    return despesa.valor - pagamentosExistentes
-  }
-
-  const handleValorPreDefinido = (tipo: 'total' | 'metade') => {
-    if (abaSelecionada === 'individual' && despesaSelecionada) {
-      const valorRestante = getValorRestanteDespesa(despesaSelecionada)
-      const valor = tipo === 'total' ? valorRestante : valorRestante / 2
-      form.setValue('valor', valor)
-    } else if (abaSelecionada === 'lote') {
-      const valor = tipo === 'total' ? valorTotalSelecionadas : valorTotalSelecionadas / 2
-      form.setValue('valor', valor)
+    const valorRestante = getValorRestanteDespesa(despesa)
+    if (data.valor > valorRestante) {
+      throw new Error('Valor do pagamento não pode ser maior que o valor restante da despesa')
     }
+
+    await DatabaseService.transaction(async () => {
+      // Registrar o pagamento
+      await DatabaseService.query(
+        `INSERT INTO pagamentos (despesa_id, conta_bancaria_id, valor, data_pagamento, descricao, numero_documento, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+        [despesa.id, data.contaBancariaId, data.valor, data.dataPagamento.toISOString(), data.descricao, data.numeroDocumento || null]
+      )
+
+      // Atualizar valor pago da despesa
+      const novoValorPago = (despesa.valorPago || 0) + data.valor
+      const status = novoValorPago >= despesa.valor ? 'paga' : 'parcial'
+      
+      await DatabaseService.query(
+        'UPDATE despesas SET valor_pago = ?, status = ? WHERE id = ?',
+        [novoValorPago, status, despesa.id]
+      )
+
+      // Atualizar saldo da conta bancária
+      await DatabaseService.query(
+        'UPDATE contas_bancarias SET saldo = saldo - ? WHERE id = ?',
+        [data.valor, data.contaBancariaId]
+      )
+    })
   }
 
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pendente: { label: "Pendente", variant: "secondary" as const },
-      pago_parcial: { label: "Pago Parcial", variant: "default" as const },
-      pago_total: { label: "Pago", variant: "default" as const },
-      vencido: { label: "Vencido", variant: "destructive" as const }
+  const processarPagamentoLote = async (data: PagamentoFormData) => {
+    if (data.valor > valorTotalSelecionadas) {
+      throw new Error('Valor do lote não pode ser maior que o valor total das despesas')
     }
-    
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pendente
-    
-    return (
-      <Badge variant={config.variant}>
-        {config.label}
-      </Badge>
-    )
+
+    await DatabaseService.transaction(async () => {
+      let valorRestante = data.valor
+      
+      for (const despesa of despesas) {
+        if (valorRestante <= 0) break
+        
+        const valorRestanteDespesa = getValorRestanteDespesa(despesa)
+        const valorPagamento = Math.min(valorRestante, valorRestanteDespesa)
+        
+        if (valorPagamento > 0) {
+          // Registrar o pagamento
+          await DatabaseService.query(
+            `INSERT INTO pagamentos (despesa_id, conta_bancaria_id, valor, data_pagamento, descricao, numero_documento, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+            [despesa.id, data.contaBancariaId, valorPagamento, data.dataPagamento.toISOString(), 
+             `${data.descricao} (Lote)`, data.numeroDocumento || null]
+          )
+
+          // Atualizar valor pago da despesa
+          const novoValorPago = (despesa.valorPago || 0) + valorPagamento
+          const status = novoValorPago >= despesa.valor ? 'paga' : 'parcial'
+          
+          await DatabaseService.query(
+            'UPDATE despesas SET valor_pago = ?, status = ? WHERE id = ?',
+            [novoValorPago, status, despesa.id]
+          )
+          
+          valorRestante -= valorPagamento
+        }
+      }
+
+      // Atualizar saldo da conta bancária
+      await DatabaseService.query(
+        'UPDATE contas_bancarias SET saldo = saldo - ? WHERE id = ?',
+        [data.valor, data.contaBancariaId]
+      )
+    })
   }
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            {despesas.length === 1 ? 'Registrar Pagamento' : 'Registrar Pagamentos'}
+            <Receipt className="w-5 h-5" />
+            Baixa de Despesas
           </DialogTitle>
-          <DialogDescription>
-            {despesas.length === 1 
-              ? `Registre o pagamento da despesa: ${despesas[0].descricao}`
-              : `Registre o pagamento de ${despesas.length} despesas selecionadas`
-            }
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6">
-          {/* Resumo das Despesas */}
+        <div className="space-y-6">
+          {/* Resumo das despesas */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                {despesas.length === 1 ? 'Informações da Despesa' : 'Resumo das Despesas'}
+              <CardTitle className="text-lg flex items-center gap-2">
+                <DollarSign className="w-5 h-5" />
+                Resumo das Despesas
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {despesas.length === 1 ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Fornecedor</p>
-                    <p className="text-sm">{despesas[0].fornecedor}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Categoria</p>
-                    <p className="text-sm">{despesas[0].categoria}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
-                    <p className="text-sm font-semibold">{formatCurrency(despesas[0].valor)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Valor Restante</p>
-                    <p className="text-sm font-semibold text-green-600">{formatCurrency(getValorRestanteDespesa(despesas[0]))}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-sm font-medium text-muted-foreground">Vencimento</p>
-                    <p className="text-sm">{format(new Date(despesas[0].vencimento), 'dd/MM/yyyy', { locale: ptBR })}</p>
-                  </div>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Quantidade</p>
+                  <p className="text-2xl font-bold">{despesas.length}</p>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total de Despesas</p>
-                      <p className="text-lg font-semibold">{despesas.length}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
-                      <p className="text-lg font-semibold">{formatCurrency(despesas.reduce((sum, d) => sum + d.valor, 0))}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Valor Restante</p>
-                      <p className="text-lg font-semibold text-green-600">{formatCurrency(valorTotalSelecionadas)}</p>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="max-h-32 overflow-y-auto space-y-2">
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="text-2xl font-bold">{formatCurrency(valorTotalSelecionadas)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Valor Médio</p>
+                  <p className="text-2xl font-bold">{formatCurrency(valorTotalSelecionadas / despesas.length)}</p>
+                </div>
+              </div>
+              
+              {despesas.length > 1 && (
+                <div className="mt-4">
+                  <h4 className="font-medium mb-2">Despesas Selecionadas:</h4>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
                     {despesas.map((despesa) => (
-                      <div key={despesa.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
-                        <div>
-                          <p className="text-sm font-medium">{despesa.fornecedor}</p>
-                          <p className="text-xs text-muted-foreground">{despesa.descricao}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-semibold">{formatCurrency(despesa.valor)}</p>
-                          <p className="text-xs text-green-600">{formatCurrency(getValorRestanteDespesa(despesa))} restante</p>
-                        </div>
+                      <div key={despesa.id} className="flex justify-between items-center p-2 bg-muted rounded">
+                        <span className="text-sm">{despesa.fornecedor} - {despesa.descricao}</span>
+                        <span className="font-medium">{formatCurrency(getValorRestanteDespesa(despesa))}</span>
                       </div>
                     ))}
                   </div>
@@ -285,16 +261,10 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
             </CardContent>
           </Card>
 
-          <Tabs value={abaSelecionada} onValueChange={setAbaSelecionada} className="w-full">
+          <Tabs defaultValue="individual" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="individual" className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4" />
-                Pagamento Individual
-              </TabsTrigger>
-              <TabsTrigger value="lote" className="flex items-center gap-2" disabled={despesas.length === 1}>
-                <Users className="h-4 w-4" />
-                Pagamento em Lote
-              </TabsTrigger>
+              <TabsTrigger value="individual">Pagamento Individual</TabsTrigger>
+              <TabsTrigger value="lote">Pagamento em Lote</TabsTrigger>
             </TabsList>
 
             <TabsContent value="individual" className="space-y-6">
@@ -476,8 +446,8 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                       <Button type="button" variant="outline" onClick={onClose}>
                         Cancelar
                       </Button>
-                      <Button type="submit">
-                        Registrar Pagamento
+                      <Button type="submit" disabled={loading}>
+                        {loading ? 'Processando...' : 'Registrar Pagamento'}
                       </Button>
                     </div>
                   </form>
@@ -634,8 +604,8 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                     <Button type="button" variant="outline" onClick={onClose}>
                       Cancelar
                     </Button>
-                    <Button type="submit">
-                      Registrar Pagamentos
+                    <Button type="submit" disabled={loading}>
+                      {loading ? 'Processando...' : 'Registrar Pagamentos'}
                     </Button>
                   </div>
                 </form>
