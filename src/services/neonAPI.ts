@@ -9,13 +9,19 @@ const NEON_API_BASE = '/api/neon'; // Para Next.js API routes
 
 class NeonDatabaseService {
   private baseUrl: string;
+  private isEnabled: boolean;
 
   constructor() {
     this.baseUrl = NEON_API_BASE;
+    // Desabilita API calls até que o backend seja configurado
+    this.isEnabled = false;
   }
 
   // Métodos para Categorias
   async getCategorias(): Promise<Categoria[]> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/categorias`);
       if (!response.ok) throw new Error('Erro ao buscar categorias');
@@ -27,6 +33,9 @@ class NeonDatabaseService {
   }
 
   async createCategoria(categoria: Omit<Categoria, 'id'>): Promise<Categoria> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/categorias`, {
         method: 'POST',
@@ -42,6 +51,9 @@ class NeonDatabaseService {
   }
 
   async updateCategoria(id: string, categoria: Partial<Categoria>): Promise<Categoria> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/categorias/${id}`, {
         method: 'PUT',
@@ -57,6 +69,9 @@ class NeonDatabaseService {
   }
 
   async deleteCategoria(id: string): Promise<void> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/categorias/${id}`, {
         method: 'DELETE'
@@ -70,6 +85,9 @@ class NeonDatabaseService {
 
   // Métodos para Despesas
   async getDespesas(): Promise<Despesa[]> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/despesas`);
       if (!response.ok) throw new Error('Erro ao buscar despesas');
@@ -81,6 +99,9 @@ class NeonDatabaseService {
   }
 
   async createDespesa(despesa: Omit<Despesa, 'id'>): Promise<Despesa> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/despesas`, {
         method: 'POST',
@@ -96,6 +117,9 @@ class NeonDatabaseService {
   }
 
   async updateDespesa(id: string, despesa: Partial<Despesa>): Promise<Despesa> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/despesas/${id}`, {
         method: 'PUT',
@@ -111,6 +135,9 @@ class NeonDatabaseService {
   }
 
   async deleteDespesa(id: string): Promise<void> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/despesas/${id}`, {
         method: 'DELETE'
@@ -124,6 +151,9 @@ class NeonDatabaseService {
 
   // Métodos para Receitas
   async getReceitas(): Promise<Receita[]> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/receitas`);
       if (!response.ok) throw new Error('Erro ao buscar receitas');
@@ -135,6 +165,9 @@ class NeonDatabaseService {
   }
 
   async createReceita(receita: Omit<Receita, 'id'>): Promise<Receita> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/receitas`, {
         method: 'POST',
@@ -150,6 +183,9 @@ class NeonDatabaseService {
   }
 
   async updateReceita(id: string, receita: Partial<Receita>): Promise<Receita> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/receitas/${id}`, {
         method: 'PUT',
@@ -165,6 +201,9 @@ class NeonDatabaseService {
   }
 
   async deleteReceita(id: string): Promise<void> {
+    if (!this.isEnabled) {
+      throw new Error('Neon API não configurada - usando localStorage');
+    }
     try {
       const response = await fetch(`${this.baseUrl}/receitas/${id}`, {
         method: 'DELETE'
@@ -178,6 +217,10 @@ class NeonDatabaseService {
 
   // Método para testar conexão
   async testConnection(): Promise<boolean> {
+    if (!this.isEnabled) {
+      console.log('Neon API desabilitada - usando modo localStorage');
+      return false;
+    }
     try {
       const response = await fetch(`${this.baseUrl}/health`);
       return response.ok;
@@ -185,6 +228,16 @@ class NeonDatabaseService {
       console.error('Erro ao testar conexão:', error);
       return false;
     }
+  }
+
+  // Método para habilitar/desabilitar a API
+  setEnabled(enabled: boolean) {
+    this.isEnabled = enabled;
+  }
+
+  // Método para verificar se está habilitada
+  getEnabled(): boolean {
+    return this.isEnabled;
   }
 }
 
