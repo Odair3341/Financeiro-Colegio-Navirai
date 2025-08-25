@@ -36,12 +36,17 @@ const Despesas = () => {
   const [despesasSelecionadas, setDespesasSelecionadas] = useState<Despesa[]>([]);
 
   useEffect(() => {
+    console.log('🔍 [Despesas] Carregando dados de despesas...');
     const dadosDespesas = financialDataService.getDespesas();
+    console.log('📊 [Despesas] Dados carregados:', dadosDespesas.length, 'despesas');
+    console.log('📋 [Despesas] Detalhes das despesas:', dadosDespesas);
+    
     // Adicionar status de conciliação calculado dinamicamente
     const despesasComConciliacao = dadosDespesas.map(despesa => ({
       ...despesa,
       conciliado: calcularStatusConciliacao(despesa.id)
     }));
+    console.log('✅ [Despesas] Despesas com conciliação:', despesasComConciliacao.length);
     setDespesas(despesasComConciliacao);
     
     if (typeof window !== 'undefined') {

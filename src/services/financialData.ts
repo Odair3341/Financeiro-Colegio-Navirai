@@ -255,8 +255,12 @@ class FinancialDataService {
 
   constructor() {
     console.log('🚀 [FinancialDataService] Inicializando serviço...');
-    // Removendo adapter para evitar referência circular
-    // this.adapter = new FinancialDataAdapter();
+    
+    // Verificar se localStorage está disponível
+    if (typeof window === 'undefined' || !window.localStorage) {
+      console.warn('⚠️ [FinancialDataService] localStorage não disponível');
+      return;
+    }
     
     // Verificar estado inicial do localStorage
     console.log('📊 [FinancialDataService] Estado inicial do localStorage:');
@@ -264,6 +268,7 @@ class FinancialDataService {
     keys.forEach(key => {
       const data = this.loadFromStorage(key, []);
       console.log(`  - ${key}: ${data.length} items`);
+      console.log(`  - ${key} dados:`, data);
     });
     
     // Garantir que exista pelo menos uma empresa padrão
@@ -279,6 +284,7 @@ class FinancialDataService {
     keys.forEach(key => {
       const data = this.loadFromStorage(key, []);
       console.log(`  - ${key}: ${data.length} items`);
+      console.log(`  - ${key} dados finais:`, data);
     });
     
     console.log('✅ [FinancialDataService] Inicialização concluída!');
@@ -344,6 +350,10 @@ class FinancialDataService {
   }
 
   // Contas Bancárias (métodos legados - manter para compatibilidade)
+  getContasBancariasSync(): ContaBancaria[] {
+    return this.loadFromStorage('contas_bancarias', []);
+  }
+
   getContasBancarias(): ContaBancaria[] {
     return this.getContasBancariasSync();
   }
@@ -435,7 +445,7 @@ class FinancialDataService {
 
   // === FORNECEDORES ===
    getFornecedoresSync(): Fornecedor[] {
-     return this.loadFromStorage('fornecedores', mockFornecedores);
+     return this.loadFromStorage('fornecedores', []);
    }
 
   async getFornecedores(): Promise<Fornecedor[]> {
@@ -489,7 +499,7 @@ class FinancialDataService {
 
   // === DESPESAS ===
    getDespesasSync(): Despesa[] {
-     return this.loadFromStorage('despesas', mockDespesas);
+     return this.loadFromStorage('despesas', []);
    }
 
   getDespesas(): Despesa[] {
