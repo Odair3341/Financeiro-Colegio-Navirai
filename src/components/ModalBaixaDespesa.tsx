@@ -93,10 +93,6 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
     }
   }, [isOpen, despesas, form])
 
-  if (!despesa) {
-    return null
-  }
-
   const onSubmit = async (data: PagamentoFormData) => {
     try {
       if (abaSelecionada === 'individual' && despesaSelecionada) {
@@ -206,56 +202,135 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
   }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Baixar Despesa</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            {despesas.length === 1 ? 'Registrar Pagamento' : 'Registrar Pagamentos'}
+          </DialogTitle>
           <DialogDescription>
-            Registre o pagamento da despesa selecionada
+            {despesas.length === 1 
+              ? `Registre o pagamento da despesa: ${despesas[0].descricao}`
+              : `Registre o pagamento de ${despesas.length} despesas selecionadas`
+            }
           </DialogDescription>
         </DialogHeader>
 
-        {/* Informações da Despesa */}
-        <Card className="mb-4">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  {despesa.descricao}
-                </CardTitle>
-                <CardDescription>
-                  {despesa.empresa?.nome} • {despesa.fornecedor?.nome} • {despesa.categoria}
-                </CardDescription>
-              </div>
-              {getStatusBadge(despesa.status)}
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-muted-foreground">Valor Total:</span>
-                <p className="font-bold text-lg">{formatCurrency(despesa.valor)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Valor Pago:</span>
-                <p className="font-medium text-green-600">{formatCurrency(despesa.valorPago)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Valor Restante:</span>
-                <p className="font-bold text-orange-600">{formatCurrency(valorRestante)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Vencimento:</span>
-                <p className="font-medium">
-                  {format(new Date(despesa.vencimento), "dd/MM/yyyy", { locale: ptBR })}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-6">
+          {/* Resumo das Despesas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                {despesas.length === 1 ? 'Informações da Despesa' : 'Resumo das Despesas'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {despesas.length === 1 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Fornecedor</p>
+                    <p className="text-sm">{despesas[0].fornecedor}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Categoria</p>
+                    <p className="text-sm">{despesas[0].categoria}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
+                    <p className="text-sm font-semibold">{formatCurrency(despesas[0].valor)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Valor Restante</p>
+                    <p className="text-sm font-semibold text-green-600">{formatCurrency(getValorRestanteDespesa(despesas[0]))}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-sm font-medium text-muted-foreground">Vencimento</p>
+                    <p className="text-sm">{format(new Date(despesas[0].vencimento), 'dd/MM/yyyy', { locale: ptBR })}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Total de Despesas</p>
+                      <p className="text-lg font-semibold">{despesas.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
+                      <p className="text-lg font-semibold">{formatCurrency(despesas.reduce((sum, d) => sum + d.valor, 0))}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">Valor Restante</p>
+                      <p className="text-lg font-semibold text-green-600">{formatCurrency(valorTotalSelecionadas)}</p>
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="max-h-32 overflow-y-auto space-y-2">
+                    {despesas.map((despesa) => (
+                      <div key={despesa.id} className="flex justify-between items-center p-2 bg-muted/50 rounded">
+                        <div>
+                          <p className="text-sm font-medium">{despesa.fornecedor}</p>
+                          <p className="text-xs text-muted-foreground">{despesa.descricao}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">{formatCurrency(despesa.valor)}</p>
+                          <p className="text-xs text-green-600">{formatCurrency(getValorRestanteDespesa(despesa))} restante</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <Tabs value={abaSelecionada} onValueChange={setAbaSelecionada} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="individual" className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Pagamento Individual
+              </TabsTrigger>
+              <TabsTrigger value="lote" className="flex items-center gap-2" disabled={despesas.length === 1}>
+                <Users className="h-4 w-4" />
+                Pagamento em Lote
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="individual" className="space-y-6">
+              {despesas.length > 1 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Selecionar Despesa</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Select value={despesaSelecionada?.id || ''} onValueChange={(value) => {
+                      const despesa = despesas.find(d => d.id === value)
+                      setDespesaSelecionada(despesa || null)
+                      if (despesa) {
+                        const valorRestante = getValorRestanteDespesa(despesa)
+                        form.setValue('valor', valorRestante)
+                      }
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma despesa para pagar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {despesas.map((despesa) => (
+                          <SelectItem key={despesa.id} value={despesa.id}>
+                            {despesa.fornecedor} - {despesa.descricao} ({formatCurrency(getValorRestanteDespesa(despesa))} restante)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </CardContent>
+                </Card>
+              )}
+
+              {(despesas.length === 1 || despesaSelecionada) && (
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="contaBancariaId"
