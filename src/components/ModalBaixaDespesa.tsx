@@ -387,7 +387,7 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                   size="sm"
                   onClick={() => handleValorPreDefinido('metade')}
                 >
-                  50% ({formatCurrency(valorRestante / 2)})
+                  50%
                 </Button>
                 <Button
                   type="button"
@@ -395,7 +395,7 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                   size="sm"
                   onClick={() => handleValorPreDefinido('total')}
                 >
-                  Total ({formatCurrency(valorRestante)})
+                  Total
                 </Button>
               </div>
             </div>
@@ -430,7 +430,10 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
-                        className="pointer-events-auto"
+                        disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                        }
+                        locale={ptBR}
                       />
                     </PopoverContent>
                   </Popover>
@@ -467,16 +470,177 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                Registrar Pagamento
-              </Button>
-            </div>
-          </form>
-        </Form>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button type="button" variant="outline" onClick={onClose}>
+                        Cancelar
+                      </Button>
+                      <Button type="submit">
+                        Registrar Pagamento
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              )}
+            </TabsContent>
+
+            <TabsContent value="lote" className="space-y-6">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="contaBancariaId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Conta Bancária</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione a conta para débito" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {contasBancarias.map(conta => (
+                                <SelectItem key={conta.id} value={conta.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Building2 className="w-4 h-4" />
+                                    <span>{conta.nome} - {conta.banco}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-2">
+                      <FormField
+                        control={form.control}
+                        name="valor"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Valor Total do Lote</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="0.00" 
+                                {...field} 
+                                onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleValorPreDefinido('metade')}
+                        >
+                          50% ({formatCurrency(valorTotalSelecionadas / 2)})
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleValorPreDefinido('total')}
+                        >
+                          Total ({formatCurrency(valorTotalSelecionadas)})
+                        </Button>
+                      </div>
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="dataPagamento"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data do Pagamento</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                                  ) : (
+                                    <span>Selecione a data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <CalendarComponent
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                initialFocus
+                                disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                                }
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="descricao"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descrição</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Descrição do pagamento em lote" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="numeroDocumento"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número do Documento (Opcional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: 001234, TED123, PIX456" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button type="button" variant="outline" onClick={onClose}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit">
+                      Registrar Pagamentos
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   )
