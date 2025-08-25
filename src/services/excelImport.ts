@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
-import { DatabaseService } from './database';
-import { Categoria, Fornecedor, ContaBancaria, Despesa, Receita } from './database';
+import { financialDataService } from './financialData';
+import type { Categoria, Fornecedor, ContaBancaria, Despesa, Receita } from './financialData';
 
 export interface ExcelImportResult {
   success: boolean;
@@ -24,10 +24,8 @@ export interface ExcelData {
 }
 
 export class ExcelImportService {
-  private dbService: DatabaseService;
-
   constructor() {
-    this.dbService = new DatabaseService();
+    // Usando financialDataService para operações de dados
   }
 
   async importFromFile(file: File): Promise<ExcelImportResult> {

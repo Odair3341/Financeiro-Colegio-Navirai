@@ -1,5 +1,4 @@
-import { DatabaseService } from './database';
-import { MigrationService } from './migration';
+import { financialDataService } from './financialData';
 import type {
   ContaBancaria,
   Empresa,
@@ -17,46 +16,15 @@ import type {
  * mas usa o banco de dados PostgreSQL/Neon ao invés do localStorage
  */
 export class FinancialDataAdapter {
-  private dbService: DatabaseService;
-  private migrationService: MigrationService;
   private idCounter: number = 0;
-  private isInitialized: boolean = false;
+  private isInitialized: boolean = true;
 
   constructor() {
-    this.dbService = new DatabaseService();
-    this.migrationService = new MigrationService();
-    this.initialize();
+    // Usando financialDataService diretamente
+    console.log('✅ FinancialDataAdapter inicializado com financialDataService');
   }
 
-  private async initialize(): Promise<void> {
-    try {
-      // Verificar se o banco está configurado
-      const status = await this.migrationService.checkDatabaseStatus();
-      
-      if (!status.connected) {
-        console.warn('⚠️ Banco de dados não conectado, usando localStorage como fallback');
-        return;
-      }
-
-      // Se não há tabelas, inicializar o banco
-      if (status.tablesCount === 0) {
-        console.log('🔄 Inicializando banco de dados...');
-        await this.migrationService.initializeDatabase();
-        
-        // Migrar dados do localStorage se existirem
-        const hasLocalData = this.checkLocalStorageData();
-        if (hasLocalData) {
-          console.log('📦 Migrando dados do localStorage...');
-          await this.migrationService.migrateAllData();
-        }
-      }
-
-      this.isInitialized = true;
-      console.log('✅ FinancialDataAdapter inicializado com sucesso');
-    } catch (error) {
-      console.error('❌ Erro ao inicializar FinancialDataAdapter:', error);
-    }
-  }
+  // Método removido - usando financialDataService diretamente
 
   private checkLocalStorageData(): boolean {
     const entities = ['contas_bancarias', 'empresas', 'fornecedores', 'despesas', 'pagamentos', 'recebimentos'];
@@ -86,116 +54,35 @@ export class FinancialDataAdapter {
     localStorage.setItem(this.getStorageKey(entity), JSON.stringify(data));
   }
 
-  // Métodos para usar banco ou localStorage como fallback
-  private async useDatabase(): Promise<boolean> {
-    return this.isInitialized && await this.migrationService.checkDatabaseStatus().then(s => s.connected);
+  // Usando financialDataService diretamente
+  private useDatabase(): boolean {
+    return false; // Sempre usa localStorage via financialDataService
   }
 
   // === CONTAS BANCÁRIAS ===
   async getContasBancarias(): Promise<ContaBancaria[]> {
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.getContasBancarias();
-      }
-    } catch (error) {
-      console.warn('Erro ao buscar contas do banco, usando localStorage:', error);
-    }
-    return this.loadFromStorage('contas_bancarias', []);
+    return financialDataService.getContasBancarias();
   }
 
   async saveContaBancaria(conta: Omit<ContaBancaria, 'id' | 'createdAt' | 'updatedAt'>): Promise<ContaBancaria> {
-    const newConta: ContaBancaria = {
-      ...conta,
-      id: this.generateUniqueId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.createContaBancaria(newConta);
-      }
-    } catch (error) {
-      console.warn('Erro ao salvar conta no banco, usando localStorage:', error);
-    }
-
-    // Fallback para localStorage
-    const contas = this.loadFromStorage('contas_bancarias', []);
-    contas.push(newConta);
-    this.saveToStorage('contas_bancarias', contas);
-    return newConta;
+    return financialDataService.saveContaBancaria(conta);
   }
 
   async updateContaBancaria(id: string, updates: Partial<ContaBancaria>): Promise<ContaBancaria | null> {
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.updateContaBancaria(id, updates);
-      }
-    } catch (error) {
-      console.warn('Erro ao atualizar conta no banco, usando localStorage:', error);
-    }
-
-    // Fallback para localStorage
-    const contas = this.loadFromStorage('contas_bancarias', []);
-    const index = contas.findIndex(c => c.id === id);
-    if (index === -1) return null;
-    
-    contas[index] = { ...contas[index], ...updates, updatedAt: new Date().toISOString() };
-    this.saveToStorage('contas_bancarias', contas);
-    return contas[index];
+    return financialDataService.updateContaBancaria(id, updates);
   }
 
   async deleteContaBancaria(id: string): Promise<boolean> {
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.deleteContaBancaria(id);
-      }
-    } catch (error) {
-      console.warn('Erro ao deletar conta no banco, usando localStorage:', error);
-    }
-
-    // Fallback para localStorage
-    const contas = this.loadFromStorage('contas_bancarias', []);
-    const filtered = contas.filter(c => c.id !== id);
-    if (filtered.length === contas.length) return false;
-    
-    this.saveToStorage('contas_bancarias', filtered);
-    return true;
+    return financialDataService.deleteContaBancaria(id);
   }
 
   // === FORNECEDORES ===
   async getFornecedores(): Promise<Fornecedor[]> {
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.getFornecedores();
-      }
-    } catch (error) {
-      console.warn('Erro ao buscar fornecedores do banco, usando localStorage:', error);
-    }
-    return this.loadFromStorage('fornecedores', []);
+    return financialDataService.getFornecedores();
   }
 
   async saveFornecedor(fornecedor: Omit<Fornecedor, 'id' | 'createdAt' | 'updatedAt'>): Promise<Fornecedor> {
-    const newFornecedor: Fornecedor = {
-      ...fornecedor,
-      id: this.generateUniqueId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    try {
-      if (await this.useDatabase()) {
-        return await this.dbService.createFornecedor(newFornecedor);
-      }
-    } catch (error) {
-      console.warn('Erro ao salvar fornecedor no banco, usando localStorage:', error);
-    }
-
-    // Fallback para localStorage
-    const fornecedores = this.loadFromStorage('fornecedores', []);
-    fornecedores.push(newFornecedor);
-    this.saveToStorage('fornecedores', fornecedores);
-    return newFornecedor;
+    return financialDataService.saveFornecedor(fornecedor);
   }
 
   async updateFornecedor(id: string, updates: Partial<Fornecedor>): Promise<Fornecedor | null> {

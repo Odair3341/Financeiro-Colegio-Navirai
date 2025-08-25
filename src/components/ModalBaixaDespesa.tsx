@@ -17,8 +17,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { DatabaseService } from '../services/database'
-import type { Despesa, ContaBancaria, Empresa } from '../services/financialData'
+import { financialDataService } from '@/services/financialData'
+import type { Despesa, ContaBancaria, Empresa, Pagamento } from '../services/financialData'
 
 const pagamentoSchema = z.object({
   contaBancariaId: z.string().min(1, 'Selecione uma conta bancária'),
@@ -79,8 +79,8 @@ export function ModalBaixaDespesa({ isOpen, onClose, despesas, onSuccess }: Moda
   const carregarDados = async () => {
     try {
       const [contasData, empresasData] = await Promise.all([
-        DatabaseService.query('SELECT * FROM contas_bancarias WHERE ativo = true ORDER BY nome'),
-        DatabaseService.query('SELECT * FROM empresas WHERE ativo = true ORDER BY nome')
+        financialDataService.getContasBancarias(),
+        financialDataService.getEmpresas()
       ])
       setContasBancarias(contasData)
       setEmpresas(empresasData)
@@ -113,17 +113,66 @@ export function ModalBaixaDespesa({ isOpen, onClose, despesas, onSuccess }: Moda
   const onSubmit = async (data: PagamentoFormData) => {
     setLoading(true)
     try {
-      const activeTab = document.querySelector('[data-state="active"]')?.getAttribute('data-value')
-      
-      if (activeTab === 'individual') {
-        await processarPagamentoIndividual(data)
+      if (despesas.length === 1 || despesaSelecionada) {
+        // Pagamento individual
+        const despesa = despesas.length === 1 ? despesas[0] : despesaSelecionada!
+        
+        const novoPagamento: Omit<Pagamento, 'id'> = {
+          despesaId: despesa.id,
+          contaBancariaId: data.contaBancariaId,
+          valor: data.valor,
+          dataPagamento: data.dataPagamento,
+          descricao: data.descricao || `Pagamento - ${despesa.fornecedor}`,
+          numeroDocumento: data.numeroDocumento,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+
+        await financialDataService.createPagamento(novoPagamento)
       } else {
-        await processarPagamentoLote(data)
+        // Pagamento em lote
+        const valorPorDespesa = data.valor / despesas.length
+        
+        for (const despesa of despesas) {
+          const novoPagamento: Omit<Pagamento, 'id'> = {
+            despesaId: despesa.id,
+            contaBancariaId: data.contaBancariaId,
+            valor: valorPorDespesa,
+            dataPagamento: data.dataPagamento,
+            descricao: data.descricao || `Pagamento em lote - ${despesa.fornecedor}`,
+            numeroDocumento: data.numeroDocumento,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          }
+
+          await financialDataService.createPagamento(novoPagamento)
+        }
       }
-      
+
+      // Atualizar status das despesas se foram pagas completamente
+      for (const despesa of despesas) {
+        const pagamentos = await financialDataService.getPagamentosByDespesa(despesa.id)
+        let valorPago = 0
+        for (const pagamento of pagamentos) {
+          valorPago += pagamento.valor
+        }
+        
+        if (valorPago >= despesa.valor) {
+          await financialDataService.updateDespesa(despesa.id, { status: 'paga' })
+        }
+      }
+
+      // Simular atualização do saldo da conta bancária
+      const contaBancaria = await financialDataService.getContaBancaria(data.contaBancariaId)
+      if (contaBancaria) {
+        await financialDataService.updateContaBancaria(data.contaBancariaId, {
+          saldo: contaBancaria.saldo - data.valor
+        })
+      }
+
       toast.success('Pagamento registrado com sucesso!')
-      onSuccess()
       onClose()
+      onSuccess?.()
     } catch (error) {
       console.error('Erro ao registrar pagamento:', error)
       toast.error('Erro ao registrar pagamento')
@@ -132,83 +181,7 @@ export function ModalBaixaDespesa({ isOpen, onClose, despesas, onSuccess }: Moda
     }
   }
 
-  const processarPagamentoIndividual = async (data: PagamentoFormData) => {
-    const despesa = despesaSelecionada || despesas[0]
-    if (!despesa) throw new Error('Nenhuma despesa selecionada')
 
-    const valorRestante = getValorRestanteDespesa(despesa)
-    if (data.valor > valorRestante) {
-      throw new Error('Valor do pagamento não pode ser maior que o valor restante da despesa')
-    }
-
-    await DatabaseService.transaction(async () => {
-      // Registrar o pagamento
-      await DatabaseService.query(
-        `INSERT INTO pagamentos (despesa_id, conta_bancaria_id, valor, data_pagamento, descricao, numero_documento, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-        [despesa.id, data.contaBancariaId, data.valor, data.dataPagamento.toISOString(), data.descricao, data.numeroDocumento || null]
-      )
-
-      // Atualizar valor pago da despesa
-      const novoValorPago = (despesa.valorPago || 0) + data.valor
-      const status = novoValorPago >= despesa.valor ? 'paga' : 'parcial'
-      
-      await DatabaseService.query(
-        'UPDATE despesas SET valor_pago = ?, status = ? WHERE id = ?',
-        [novoValorPago, status, despesa.id]
-      )
-
-      // Atualizar saldo da conta bancária
-      await DatabaseService.query(
-        'UPDATE contas_bancarias SET saldo = saldo - ? WHERE id = ?',
-        [data.valor, data.contaBancariaId]
-      )
-    })
-  }
-
-  const processarPagamentoLote = async (data: PagamentoFormData) => {
-    if (data.valor > valorTotalSelecionadas) {
-      throw new Error('Valor do lote não pode ser maior que o valor total das despesas')
-    }
-
-    await DatabaseService.transaction(async () => {
-      let valorRestante = data.valor
-      
-      for (const despesa of despesas) {
-        if (valorRestante <= 0) break
-        
-        const valorRestanteDespesa = getValorRestanteDespesa(despesa)
-        const valorPagamento = Math.min(valorRestante, valorRestanteDespesa)
-        
-        if (valorPagamento > 0) {
-          // Registrar o pagamento
-          await DatabaseService.query(
-            `INSERT INTO pagamentos (despesa_id, conta_bancaria_id, valor, data_pagamento, descricao, numero_documento, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-            [despesa.id, data.contaBancariaId, valorPagamento, data.dataPagamento.toISOString(), 
-             `${data.descricao} (Lote)`, data.numeroDocumento || null]
-          )
-
-          // Atualizar valor pago da despesa
-          const novoValorPago = (despesa.valorPago || 0) + valorPagamento
-          const status = novoValorPago >= despesa.valor ? 'paga' : 'parcial'
-          
-          await DatabaseService.query(
-            'UPDATE despesas SET valor_pago = ?, status = ? WHERE id = ?',
-            [novoValorPago, status, despesa.id]
-          )
-          
-          valorRestante -= valorPagamento
-        }
-      }
-
-      // Atualizar saldo da conta bancária
-      await DatabaseService.query(
-        'UPDATE contas_bancarias SET saldo = saldo - ? WHERE id = ?',
-        [data.valor, data.contaBancariaId]
-      )
-    })
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

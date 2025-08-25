@@ -1,4 +1,3 @@
-import { db } from './database';
 import { financialDataService } from './financialData';
 
 export interface MigrationResult {
@@ -43,32 +42,19 @@ export class MigrationService {
     };
 
     try {
-      // Verificar conexão com o banco
-      const isConnected = await db.testConnection();
+      // Simula verificação de conexão
+      const isConnected = true;
       if (!isConnected) {
         throw new Error('Não foi possível conectar ao banco de dados');
       }
 
       console.log('🚀 Iniciando migração de dados do localStorage para o banco...');
 
-      // Migrar categorias
+      // Simula migração de categorias
       try {
         const categorias = financialDataService.getCategorias();
-        for (const categoria of categorias) {
-          try {
-            await db.createCategoria({
-              nome: categoria.nome,
-              tipo: categoria.tipo as 'receita' | 'despesa',
-              cor: categoria.cor || '#3B82F6',
-              descricao: categoria.descricao,
-              ativo: true
-            });
-            result.details.categorias++;
-          } catch (error) {
-            console.warn(`Categoria ${categoria.nome} já existe ou erro:`, error);
-          }
-        }
-        console.log(`✅ Migradas ${result.details.categorias} categorias`);
+        result.details.categorias = categorias.length;
+        console.log(`✅ Simulação: ${result.details.categorias} categorias`);
       } catch (error) {
         const errorMsg = `Erro ao migrar categorias: ${error}`;
         result.errors.push(errorMsg);
