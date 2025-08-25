@@ -97,49 +97,67 @@ export function ModalBaixaDespesa({ despesas, isOpen, onClose, onSuccess }: Moda
     return null
   }
 
-  const onSubmit = (data: PagamentoFormData) => {
-    if (!despesa) return
-    
+  const onSubmit = async (data: PagamentoFormData) => {
     try {
-      console.log('DEBUG MODAL: Despesa ID:', despesa.id)
-      console.log('DEBUG MODAL: Despesa valor:', despesa.valor)
-      console.log('DEBUG MODAL: Despesa valorPago:', despesa.valorPago)
-      
-      const valorRestante = despesa.valor - (despesa.valorPago || 0)
-      
-      if (data.valor > valorRestante) {
+      if (abaSelecionada === 'individual' && despesaSelecionada) {
+        // Pagamento individual
+        const valorRestante = getValorRestanteDespesa(despesaSelecionada)
+        
+        if (data.valor > valorRestante) {
+          toast({
+            title: "Valor inválido",
+            description: "O valor do pagamento não pode ser maior que o valor restante da despesa.",
+            variant: "destructive"
+          })
+          return
+        }
+
+        const pagamento = {
+          id: Date.now().toString(),
+          despesaId: despesaSelecionada.id,
+          contaBancariaId: data.contaBancariaId,
+          valor: data.valor,
+          dataPagamento: data.dataPagamento,
+          numeroDocumento: data.numeroDocumento || '',
+          observacoes: data.descricao || ''
+        }
+
+        financialDataService.addPagamento(pagamento)
+
         toast({
-          title: "Valor inválido",
-          description: "O valor do pagamento não pode ser maior que o valor restante da despesa.",
-          variant: "destructive"
+          title: "Sucesso!",
+          description: "Pagamento registrado com sucesso.",
         })
-        return
+      } else if (abaSelecionada === 'lote') {
+        // Pagamento em lote
+        const valorPorDespesa = data.valor / despesas.length
+        
+        for (const despesa of despesas) {
+          const pagamento = {
+            id: `${Date.now()}_${despesa.id}`,
+            despesaId: despesa.id,
+            contaBancariaId: data.contaBancariaId,
+            valor: valorPorDespesa,
+            dataPagamento: data.dataPagamento,
+            numeroDocumento: data.numeroDocumento || '',
+            observacoes: data.descricao || `Pagamento em lote - ${despesa.descricao}`
+          }
+
+          financialDataService.addPagamento(pagamento)
+        }
+
+        toast({
+          title: "Sucesso!",
+          description: `${despesas.length} pagamentos registrados com sucesso.`,
+        })
       }
 
-      const pagamentoData = {
-        despesaId: despesa.id,
-        contaBancariaId: data.contaBancariaId,
-        valor: data.valor,
-        dataPagamento: format(data.dataPagamento, 'yyyy-MM-dd'),
-        descricao: data.descricao,
-        numeroDocumento: data.numeroDocumento || undefined
-      }
-
-      console.log('DEBUG MODAL: Registrando pagamento:', pagamentoData)
-      financialDataService.registrarPagamento(pagamentoData)
-      
-      toast({
-        title: "Pagamento registrado",
-        description: "O pagamento foi registrado com sucesso e a despesa foi atualizada."
-      })
-      
-      onClose()
       onSuccess()
+      onClose()
     } catch (error) {
-      console.error('DEBUG MODAL: Erro ao registrar pagamento:', error)
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao registrar o pagamento.",
+        title: "Erro!",
+        description: "Erro ao registrar pagamento(s).",
         variant: "destructive"
       })
     }
