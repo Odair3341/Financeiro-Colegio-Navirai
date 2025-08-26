@@ -12,11 +12,33 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
+    <!-- Inicialização do Dark Mode (antes do React carregar) -->
+    <script>
+      // Aplicar tema imediatamente para evitar flash
+      (function() {
+        try {
+          const savedTheme = localStorage.getItem('theme');
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+          
+          if (shouldBeDark) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {
+          // Se der erro, usa modo escuro como padrão
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+
     <meta property="og:title" content="Sistema Financeiro CN" />
     <meta property="og:description" content="Sistema de Gestão Financeira" />
     <meta property="og:type" content="website" />
 
     <meta name="twitter:card" content="summary_large_image" />
+  </head>
   </head>
 
   <body>

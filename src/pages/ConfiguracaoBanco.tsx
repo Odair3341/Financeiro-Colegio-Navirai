@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DatabaseConfig } from '../components/DatabaseConfig';
+import DataSyncComponent from '../components/DataSyncComponent';
 import { ArrowLeft, Database, CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -163,6 +164,11 @@ const ConfiguracaoBanco: React.FC = () => {
         {/* Configuração do Banco */}
         <div className="max-w-4xl mx-auto">
           <DatabaseConfig />
+        </div>
+
+        {/* Sincronização de Dados */}
+        <div className="max-w-4xl mx-auto mt-8">
+          <DataSyncComponent />
         </div>
 
         {/* Instruções Detalhadas */}
