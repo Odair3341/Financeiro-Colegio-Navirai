@@ -153,7 +153,11 @@ export class ExcelImportService {
             console.log(`🔍 ExcelImportService: Primeira linha da aba '${sheetName}':`, jsonData[0] || 'Nenhuma linha encontrada');
             console.log(`📝 ExcelImportService: Colunas da aba '${sheetName}':`, jsonData.length > 0 ? Object.keys(jsonData[0]) : []);
             
-            const normalizedSheetName = sheetName.toLowerCase().replace(/[\s_-]/g, '');
+            const normalizedSheetName = sheetName
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, ''); // Remove espaços, hífens, etc.
             console.log(`🏷️ ExcelImportService: Nome normalizado da aba: '${normalizedSheetName}'`);
             
             switch (normalizedSheetName) {

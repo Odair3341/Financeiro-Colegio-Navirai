@@ -411,6 +411,17 @@ const ImportacaoExcel: React.FC = () => {
                     </div>
                   ))}
                 </div>
+
+                <Collapsible className="mt-4">
+                  <CollapsibleTrigger className="flex items-center text-sm text-muted-foreground">
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    <span>Ver nomes de abas detectados (Debug)</span>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2 p-2 bg-muted rounded-md">
+                    <p className="text-xs font-mono">{debugSheetNames.join(', ')}</p>
+                  </CollapsibleContent>
+                </Collapsible>
+
               </CardContent>
             </Card>
 
