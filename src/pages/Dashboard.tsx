@@ -51,8 +51,8 @@ const Dashboard = () => {
   const loadDashboardData = () => {
     try {
       // Usar dados do Neon se disponível, senão usar localStorage/mock
-      const totalDespesas = despesas.despesas ? despesas.despesas.reduce((acc: number, despesa: any) => acc + despesa.valor, 0) : 0;
-      const totalReceitas = receitas.receitas ? receitas.receitas.reduce((acc: number, receita: any) => acc + receita.valor, 0) : 0;
+      const totalDespesas = despesas.despesas ? despesas.despesas.reduce((acc: number, despesa: { valor: number }) => acc + despesa.valor, 0) : 0;
+      const totalReceitas = receitas.receitas ? receitas.receitas.reduce((acc: number, receita: { valor: number }) => acc + receita.valor, 0) : 0;
       
       // Dados mock para contas bancárias (até integrar com Neon)
       const saldoBancario = 15420.50; // Dados simulados

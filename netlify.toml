@@ -1,16 +1,33 @@
 [build]
-  publish = "dist"
+  # Comando de build para Vite
   command = "npm run build"
+  # Diretório de saída do build
+  publish = "dist"
+  # Variáveis de ambiente para o build
+  environment = { NODE_VERSION = "18" }
 
-[build.environment]
-  NODE_VERSION = "18"
-  NPM_VERSION = "9"
+[build.processing]
+  # Otimizações automáticas do Netlify
+  skip_processing = false
 
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+# Configurações para SPA (Single Page Application)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
+# Headers de segurança
 [[headers]]
   for = "/*"
   [headers.values]
@@ -18,19 +35,22 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.neon.tech;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://ep-dawn-king-acewwr1k-pooler.sa-east-1.aws.neon.tech;"
 
+# Cache para assets estáticos
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# Configurações de função para APIs (se necessário no futuro)
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-[[headers]]
-  for = "*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+# Configurações de desenvolvimento local
+[dev]
+  command = "npm run dev"
+  port = 5173
+  publish = "dist"
+  autoLaunch = false

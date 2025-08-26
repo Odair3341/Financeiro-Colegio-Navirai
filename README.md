@@ -77,14 +77,19 @@ This project is built with:
 
 ## 🚀 Deploy
 
-### Deploy na Vercel (Recomendado)
+### Deploy no Netlify (Recomendado)
 
-1. Conecte seu repositório GitHub à Vercel
-2. Configure as seguintes variáveis de ambiente (opcionais):
+1. Conecte seu repositório GitHub ao Netlify
+2. Configure as seguintes opções de build:
+   - **Build command**: `npm run build`
+   - **Publish directory**: `dist`
+3. Configure as variáveis de ambiente (opcionais):
    ```
-   VITE_DATABASE_URL=sua_url_do_neon_postgresql
+   VITE_DATABASE_URL=postgresql://neondb_owner:sua_senha@ep-dawn-king-acewwr1k-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
    ```
-3. O deploy será automático a cada push na branch `main`
+4. O deploy será automático a cada push na branch `main`
+
+📖 **Guia Completo**: Consulte [DEPLOY_NETLIFY_GUIDE.md](./DEPLOY_NETLIFY_GUIDE.md) para instruções detalhadas.
 
 ### Deploy via Lovable
 
