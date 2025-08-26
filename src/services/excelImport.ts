@@ -369,13 +369,20 @@ private parseReceitas(data: unknown[]): Receita[] {
         if (valorStr) {
           const valorLimpo = String(valorStr).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
           valor = parseFloat(valorLimpo) || 0;
+          
+          // 🛡️ VALIDAÇÃO DE SEGURANÇA: Rejeitar valores absurdos
+          if (valor < 0 || valor > 1000000) {
+            console.warn(`⚠️ Valor inválido detectado na linha ${index + 1}: R$ ${valor}. Pulando...`);
+            return; // Pula esta linha
+          }
         }
         
         // Processar data
         const vencimentoStr = vencimento ? this.parseDate(vencimento) : '';
         const vencimentoDate = vencimentoStr ? new Date(vencimentoStr) : new Date();
         
-        if (fornecedor && String(fornecedor).toString().trim() && valor > 0) {
+        // ✅ Adicionar apenas se tem fornecedor válido e valor positivo dentro do range aceitável
+        if (fornecedor && String(fornecedor).toString().trim() && valor > 0 && valor <= 1000000) {
           despesas.push({
             id: `desp_${nomeAba}_${Date.now()}_${index}`,
             empresaId: '1',
@@ -391,12 +398,15 @@ private parseReceitas(data: unknown[]): Receita[] {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           } as any);
+        } else if (valor > 1000000) {
+          console.warn(`⚠️ Despesa rejeitada - valor muito alto: R$ ${valor.toLocaleString('pt-BR')} (linha ${index + 1})`);
         }
       } catch (error) {
         console.error(`Erro ao processar linha ${index + 1} da aba ${nomeAba}:`, error);
       }
     });
     
+    console.log(`✅ [parseDespesasFinanceiras] Processadas ${despesas.length} despesas válidas da aba '${nomeAba}'`);
     return despesas;
   }
 

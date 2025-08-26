@@ -1,5 +1,42 @@
 import { FinancialDataAdapter } from './financialDataAdapter';
 
+// Sistema de cache para melhorar performance
+class PerformanceCache {
+  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
+  
+  set(key: string, data: any, ttlMs: number = 30000): void {
+    this.cache.set(key, {
+      data: JSON.parse(JSON.stringify(data)), // Deep clone
+      timestamp: Date.now(),
+      ttl: ttlMs
+    });
+  }
+  
+  get<T>(key: string): T | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    if (Date.now() - entry.timestamp > entry.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data;
+  }
+  
+  clear(): void {
+    this.cache.clear();
+  }
+  
+  invalidate(pattern: string): void {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+}
+
 // Tipos principais do sistema financeiro
 export interface ContaBancaria {
   id: string
@@ -278,10 +315,14 @@ const mockDespesas: Despesa[] = [
 // Serviços de dados (usando localStorage para persistência)
 class FinancialDataService {
   private idCounter: number = 0;
+  private cache: PerformanceCache;
   // private adapter: FinancialDataAdapter; // Removido para evitar referência circular
 
   constructor() {
     console.log('🚀 [FinancialDataService] Inicializando serviço...');
+    
+    // Inicializar cache
+    this.cache = new PerformanceCache();
     
     // Verificar se localStorage está disponível
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -352,6 +393,13 @@ class FinancialDataService {
 
   private loadFromStorage<T>(entity: string, defaultData: T[]): T[] {
     try {
+      // 💾 Verificar cache primeiro para melhor performance
+      const cached = this.cache.get<T[]>(`storage_${entity}`);
+      if (cached) {
+        console.log(`⚡ [loadFromStorage] Cache hit para '${entity}' - ${cached.length} items`);
+        return cached;
+      }
+      
       const storageKey = this.getStorageKey(entity);
       console.log(`📖 [loadFromStorage] Carregando dados de '${entity}' (chave: ${storageKey})`);
       const stored = localStorage.getItem(storageKey);
@@ -359,6 +407,9 @@ class FinancialDataService {
       if (stored) {
         const parsedData = JSON.parse(stored);
         console.log(`📖 [loadFromStorage] Carregados ${parsedData.length} items de '${entity}'`);
+        
+        // 💾 Armazenar no cache (TTL de 30 segundos)
+        this.cache.set(`storage_${entity}`, parsedData, 30000);
         return parsedData;
       } else {
         console.log(`📖 [loadFromStorage] Nenhum dado encontrado para '${entity}', retornando valor padrão`);
@@ -374,6 +425,9 @@ class FinancialDataService {
     console.log(`💾 [saveToStorage] Salvando ${data.length} items em '${entity}'`);
     localStorage.setItem(this.getStorageKey(entity), JSON.stringify(data));
     console.log(`💾 [saveToStorage] Dados salvos com sucesso em '${entity}'`);
+    
+    // 🧙 Invalidar cache para forçar reload na próxima consulta
+    this.cache.invalidate(`storage_${entity}`);
   }
 
   // Contas Bancárias (métodos legados - manter para compatibilidade)
@@ -1156,7 +1210,62 @@ class FinancialDataService {
     return { removedFornecedores, removedDespesas }
   }
 
-  // Limpa todos os dados persistidos (mantém estrutura vazia)
+  // === LIMPEZA DE EMERGÊNCIA ===
+  clearCorruptedData(): { cleaned: boolean; removedRecords: number } {
+    console.log('🧹 [clearCorruptedData] Iniciando limpeza de dados corrompidos...');
+    let removedRecords = 0;
+    
+    // Limpar despesas com valores absurdos
+    const despesas = this.getDespesas();
+    const despesasLimpas = despesas.filter(d => {
+      const valorValido = d.valor >= 0 && d.valor <= 1000000; // Máximo 1 milhão
+      if (!valorValido) {
+        console.log(`🗑️ Removendo despesa com valor inválido: R$ ${d.valor}`);
+        removedRecords++;
+      }
+      return valorValido;
+    });
+    
+    if (despesasLimpas.length !== despesas.length) {
+      this.saveToStorage('despesas', despesasLimpas);
+      console.log(`✅ Removidas ${despesas.length - despesasLimpas.length} despesas corrompidas`);
+    }
+    
+    // Limpar pagamentos com valores absurdos
+    const pagamentos = this.getPagamentos();
+    const pagamentosLimpos = pagamentos.filter(p => {
+      const valorValido = p.valor >= 0 && p.valor <= 1000000;
+      if (!valorValido) {
+        console.log(`🗑️ Removendo pagamento com valor inválido: R$ ${p.valor}`);
+        removedRecords++;
+      }
+      return valorValido;
+    });
+    
+    if (pagamentosLimpos.length !== pagamentos.length) {
+      this.saveToStorage('pagamentos', pagamentosLimpos);
+      console.log(`✅ Removidas ${pagamentos.length - pagamentosLimpos.length} pagamentos corrompidos`);
+    }
+    
+    // Limpar lançamentos do sistema
+    const lancamentos = this.getLancamentosSistema();
+    const lancamentosLimpos = lancamentos.filter(l => {
+      const valorValido = l.valor >= 0 && l.valor <= 1000000;
+      if (!valorValido) {
+        console.log(`🗑️ Removendo lançamento com valor inválido: R$ ${l.valor}`);
+        removedRecords++;
+      }
+      return valorValido;
+    });
+    
+    if (lancamentosLimpos.length !== lancamentos.length) {
+      this.saveToStorage('lancamentos_sistema', lancamentosLimpos);
+      console.log(`✅ Removidas ${lancamentos.length - lancamentosLimpos.length} lançamentos corrompidos`);
+    }
+    
+    console.log(`🎯 [clearCorruptedData] Limpeza concluída: ${removedRecords} registros removidos`);
+    return { cleaned: removedRecords > 0, removedRecords };
+  }
   clearAllData(): void {
     const keys = ['empresas', 'fornecedores', 'despesas', 'contas_bancarias', 'pagamentos', 'recebimentos', 'lancamentos_sistema', 'movimentacoes_bancarias', 'conciliacoes'];
     keys.forEach(key => {

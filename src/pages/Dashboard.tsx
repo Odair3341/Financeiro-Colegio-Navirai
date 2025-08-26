@@ -113,6 +113,35 @@ const Dashboard = () => {
     }
   };
 
+  const handleCleanCorruptedData = () => {
+    try {
+      console.log('🧹 Iniciando limpeza de dados corrompidos...');
+      const result = financialDataService.clearCorruptedData();
+      
+      if (result.cleaned) {
+        toast({ 
+          title: "Dados corrompidos removidos", 
+          description: `${result.removedRecords} registros com valores inválidos foram removidos.` 
+        });
+        
+        // Recarregar dados do dashboard
+        loadDashboardData();
+      } else {
+        toast({ 
+          title: "Nenhum dado corrompido encontrado", 
+          description: "Todos os registros estão com valores válidos." 
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao limpar dados corrompidos:', error);
+      toast({ 
+        title: "Erro", 
+        description: "Ocorreu um erro ao limpar os dados corrompidos.",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Carregar dados ao montar o componente e quando os dados do Neon mudarem
   useEffect(() => {
     loadDashboardData();
@@ -141,12 +170,20 @@ const Dashboard = () => {
         </div>
         <div className="flex space-x-4 mt-4 md:mt-0">
           <Button 
+            variant="outline"
+            className="flex items-center gap-2 smooth-transition hover-lift px-6 py-3 rounded-xl font-medium border-orange-500 text-orange-500 hover:bg-orange-50" 
+            onClick={handleCleanCorruptedData}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Limpar Corrompidos
+          </Button>
+          <Button 
             variant="destructive" 
             className="flex items-center gap-2 smooth-transition hover-lift px-6 py-3 rounded-xl font-medium" 
             onClick={handleClear}
           >
             <AlertTriangle className="w-4 h-4" />
-            Limpar Dados
+            Limpar Todos
           </Button>
           <Select value={selectedYear} onValueChange={setSelectedYear}>
             <SelectTrigger className="w-32 smooth-transition hover-scale rounded-xl border-2">
