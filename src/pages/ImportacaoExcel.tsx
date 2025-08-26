@@ -18,6 +18,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { ExcelImportService } from '../services/excelImport';
+import { testNeonConnection } from '../utils/neonUsage';
 
 // Criar instância do serviço
 const excelImportService = new ExcelImportService();

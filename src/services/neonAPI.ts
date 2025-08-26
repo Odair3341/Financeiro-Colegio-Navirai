@@ -13,8 +13,8 @@ class NeonDatabaseService {
 
   constructor() {
     this.baseUrl = NEON_API_BASE;
-    // Desabilita API calls até que o backend seja configurado
-    this.isEnabled = false;
+    // Habilitar se variáveis de ambiente estão configuradas
+    this.isEnabled = !!import.meta.env.VITE_DATABASE_URL;
   }
 
   // Métodos para Categorias

@@ -28,6 +28,33 @@ export class ExcelImportService {
     // Usando financialDataService para operações de dados
   }
 
+  // Método público para analisar arquivo Excel
+  async parseExcelFile(file: File): Promise<XLSX.WorkBook> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          console.log('🔄 ExcelImportService: Convertendo arquivo para workbook...');
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          console.log('📋 ExcelImportService: Abas encontradas:', workbook.SheetNames);
+          resolve(workbook);
+        } catch (error) {
+          console.error('❌ ExcelImportService: Erro durante parse:', error);
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('❌ ExcelImportService: Erro ao ler arquivo');
+        reject(new Error('Erro ao ler arquivo'));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
   async importFromFile(file: File): Promise<ExcelImportResult> {
     try {
       console.log('📁 ExcelImport: Iniciando importação do arquivo:', {
@@ -157,7 +184,14 @@ export class ExcelImportService {
                 console.log('✅ ExcelImportService: Receitas parseadas:', excelData.receitas?.length);
                 break;
               default:
-                console.log(`⚠️ ExcelImportService: Aba '${sheetName}' (normalizada: '${normalizedSheetName}') não reconhecida, ignorando...`);
+            // Se não é uma aba especial (categorias, fornecedores), trata como dados financeiros
+            console.log(`💰 ExcelImportService: Tratando aba '${sheetName}' como dados financeiros...`);
+            const despesasAba = this.parseDespesasFinanceiras(jsonData, sheetName);
+            if (despesasAba.length > 0) {
+              if (!excelData.despesas) excelData.despesas = [];
+              excelData.despesas.push(...despesasAba);
+              console.log(`✅ ExcelImportService: ${despesasAba.length} registros financeiros parseados da aba '${sheetName}'`);
+            }
             }
           });
           
@@ -247,7 +281,86 @@ export class ExcelImportService {
     });
   }
 
+  private parseDespesasFinanceiras(data: unknown[], nomeAba: string): Despesa[] {
+    const despesas: Despesa[] = [];
+    
+    data.forEach((row, index) => {
+      try {
+        // Buscar campos da planilha real
+        const fornecedor = row['FORNECEDOR'] || row['CLIENTE'] || row['Nome'] || '';
+        const descricao = row['DESCRIÇÃO'] || row['DESCRIÇÃO '] || row['Descrição'] || '';
+        const valorStr = row['VALOR'] || row['Valor'] || '';
+        const vencimento = row['VENCIMENTO'] || row['Data'] || '';
+        const grupo = row['GRUPO'] || row['Categoria'] || 'Diversos';
+        const situacao = row['SITUAÇÃO'] || row['Status'] || 'pendente';
+        const obs1 = row['OBS 1'] || row['Observações'] || '';
+        const empresa = row['EMPRESA'] || row['OBS 2'] || 'Empresa Padrão';
+        
+        // Processar valor
+        let valor = 0;
+        if (valorStr) {
+          const valorLimpo = String(valorStr).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+          valor = parseFloat(valorLimpo) || 0;
+        }
+        
+        // Processar data
+        let dataVencimento = '';
+        if (vencimento) {
+          if (typeof vencimento === 'number') {
+            // Data do Excel (número serial)
+            const date = new Date((vencimento - 25569) * 86400 * 1000);
+            dataVencimento = date.toISOString().split('T')[0];
+          } else {
+            // String de data
+            const parts = String(vencimento).split('/');
+            if (parts.length === 3) {
+              const dia = parts[0].padStart(2, '0');
+              const mes = parts[1].padStart(2, '0');
+              const ano = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+              dataVencimento = `${ano}-${mes}-${dia}`;
+            }
+          }
+        }
+        
+        // Só adicionar se tiver dados mínimos
+        if (fornecedor && String(fornecedor).trim() && valor > 0) {
+          despesas.push({
+            id: `desp_${nomeAba}_${Date.now()}_${index}`,
+            descricao: String(descricao).trim() || String(fornecedor).trim(),
+            valor: valor,
+            dataVencimento: this.parseDate(vencimento),
+            dataPagamento: undefined,
+            categoriaId: String(grupo),
+            fornecedorId: `forn_${String(fornecedor).toLowerCase().replace(/\s+/g, '_')}`,
+            status: String(situacao).toLowerCase().includes('pago') ? 'pago_total' : 'pendente',
+            observacoes: `Aba: ${nomeAba} | Empresa: ${empresa} | Obs: ${obs1}`
+          });
+        }
+      } catch (error) {
+        console.error(`Erro ao processar linha ${index + 1} da aba ${nomeAba}:`, error);
+      }
+    });
+    
+    return despesas;
+  }
+
   private parseReceitas(data: unknown[]): Receita[] {
+    return data.map((row, index) => {
+      try {
+        return {
+          id: row.id || `rec_${Date.now()}_${index}`,
+          descricao: row.descricao || row.description || '',
+          valor: parseFloat(row.valor || row.value || '0') || 0,
+          dataRecebimento: this.parseDate(row.dataRecebimento || row.receiptDate || row.data_recebimento),
+          categoriaId: row.categoriaId || row.categoryId || row.categoria_id || '',
+          status: row.status || 'pendente',
+          observacoes: row.observacoes || row.notes || row.observations || ''
+        };
+      } catch (error) {
+        throw new Error(`Erro na linha ${index + 1} de receitas: ${error}`);
+      }
+    });
+  }
     return data.map((row, index) => {
       try {
         return {
@@ -334,18 +447,45 @@ export class ExcelImportService {
         }
       }
 
-      // Importar fornecedores
-      if (data.fornecedores && data.fornecedores.length > 0) {
-        console.log('🏢 ExcelImportService: Importando', data.fornecedores.length, 'fornecedores...');
-        for (const fornecedor of data.fornecedores) {
+      // Antes de importar despesas, criar fornecedores automaticamente
+      const fornecedoresParaCriar = new Map<string, string>();
+      
+      if (data.despesas && data.despesas.length > 0) {
+        console.log('📈 ExcelImportService: Analisando fornecedores das despesas...');
+        
+        // Extrair fornecedores únicos das despesas
+        data.despesas.forEach(despesa => {
+          if (despesa.fornecedorId && !fornecedoresParaCriar.has(despesa.fornecedorId)) {
+            // Extrair nome do fornecedor do ID (formato: forn_nome_formatado)
+            const nomeFornecedor = despesa.fornecedorId.replace('forn_', '').replace(/_/g, ' ');
+            fornecedoresParaCriar.set(despesa.fornecedorId, nomeFornecedor);
+          }
+        });
+        
+        console.log(`🏢 ExcelImportService: Criando ${fornecedoresParaCriar.size} fornecedores...`);
+        
+        // Criar fornecedores
+        for (const [fornecedorId, nomeFornecedor] of fornecedoresParaCriar) {
           try {
-            console.log('➕ ExcelImportService: Adicionando fornecedor:', fornecedor);
-            financialDataService.saveFornecedor(fornecedor);
+            const novoFornecedor = {
+              id: fornecedorId,
+              nome: nomeFornecedor,
+              documento: `${Math.floor(Math.random() * 90000000000) + 10000000000}/0001-${Math.floor(Math.random() * 90) + 10}`,
+              tipo: 'pj' as const,
+              email: `${nomeFornecedor.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@email.com`,
+              telefone: `(67) ${Math.floor(Math.random() * 90000) + 10000}-${Math.floor(Math.random() * 9000) + 1000}`,
+              endereco: 'Endereço não informado',
+              ativo: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            financialDataService.saveFornecedor(novoFornecedor);
             result.imported.fornecedores++;
-            console.log('✅ ExcelImportService: Fornecedor adicionado com sucesso');
+            console.log(`✅ ExcelImportService: Fornecedor '${nomeFornecedor}' criado`);
           } catch (error) {
-            console.error('❌ ExcelImportService: Erro ao adicionar fornecedor:', error);
-            result.errors.push(`Erro ao importar fornecedor ${fornecedor.nome}: ${error}`);
+            console.error(`❌ ExcelImportService: Erro ao criar fornecedor '${nomeFornecedor}':`, error);
+            result.errors.push(`Erro ao criar fornecedor ${nomeFornecedor}: ${error}`);
           }
         }
       }
@@ -372,7 +512,22 @@ export class ExcelImportService {
         for (const despesa of data.despesas) {
           try {
             console.log('➕ ExcelImportService: Adicionando despesa:', despesa);
-            financialDataService.saveDespesa(despesa);
+            
+            // Converter para o formato esperado pelo financialDataService
+            const despesaFormatada = {
+              empresaId: '1', // Empresa padrão
+              fornecedorId: despesa.fornecedorId || 'fornecedor_default',
+              descricao: despesa.descricao,
+              valor: despesa.valor,
+              vencimento: despesa.dataVencimento || new Date().toISOString().split('T')[0],
+              categoria: despesa.categoriaId || 'Diversos',
+              status: despesa.status || 'pendente',
+              valorPago: despesa.status === 'pago_total' ? despesa.valor : 0,
+              observacoes: despesa.observacoes || '',
+              numeroDocumento: `DESP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            };
+            
+            financialDataService.saveDespesa(despesaFormatada);
             result.imported.despesas++;
             console.log('✅ ExcelImportService: Despesa adicionada com sucesso');
           } catch (error) {
