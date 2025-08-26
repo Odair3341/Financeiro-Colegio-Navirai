@@ -351,10 +351,12 @@ export class ExcelImportService {
           id: row.id || `rec_${Date.now()}_${index}`,
           descricao: row.descricao || row.description || '',
           valor: parseFloat(row.valor || row.value || '0') || 0,
-          dataRecebimento: this.parseDate(row.dataRecebimento || row.receiptDate || row.data_recebimento),
-          categoriaId: row.categoriaId || row.categoryId || row.categoria_id || '',
+          data_vencimento: this.parseDate(row.data_vencimento || row.dueDate),
+          data_recebimento: this.parseDate(row.data_recebimento || row.receiptDate),
+          categoria_id: row.categoria_id || row.categoryId,
           status: row.status || 'pendente',
-          observacoes: row.observacoes || row.notes || row.observations || ''
+          observacoes: row.observacoes || row.notes || '',
+          recorrente: row.recorrente !== undefined ? row.recorrente : false,
         };
       } catch (error) {
         throw new Error(`Erro na linha ${index + 1} de receitas: ${error}`);

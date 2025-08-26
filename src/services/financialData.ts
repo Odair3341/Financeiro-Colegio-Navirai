@@ -948,6 +948,24 @@ class FinancialDataService {
     return this.loadFromStorage('conciliacoes', [])
   }
 
+  // Categorias
+  getCategorias(): Categoria[] {
+    return this.loadFromStorage('categorias', [])
+  }
+
+  saveCategoria(categoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>): Categoria {
+    const categorias = this.getCategorias()
+    const newCategoria: Categoria = {
+      ...categoria,
+      id: this.generateUniqueId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    categorias.push(newCategoria)
+    this.saveToStorage('categorias', categorias)
+    return newCategoria
+  }
+
   registrarConciliacao(conciliacao: Omit<Conciliacao, 'id' | 'createdAt'>): Conciliacao {
     const conciliacoes = this.getConciliacoes()
     const newConciliacao: Conciliacao = {
