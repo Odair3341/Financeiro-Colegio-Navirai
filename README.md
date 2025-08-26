@@ -1,5 +1,7 @@
 # Sistema Financeiro CN
 
+<!-- Deploy trigger: $(date +%Y%m%d_%H%M%S) -->
+
 Um sistema completo de gestão financeira pessoal desenvolvido com React, TypeScript e Tailwind CSS.
 
 ## 🚀 Funcionalidades
