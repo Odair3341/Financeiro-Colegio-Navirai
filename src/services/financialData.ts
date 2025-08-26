@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { FinancialDataAdapter } from './financialDataAdapter';
 
 // Tipos principais do sistema financeiro
@@ -646,20 +645,40 @@ class FinancialDataService {
 
     // Buscar dados da despesa para enriquecer o lançamento
     const despesa = this.getDespesas().find(d => d.id === pagamento.despesaId)
+    
+    if (despesa) {
+      // Criar lançamento no sistema com dados enriched
+      this.criarLancamentoSistema({
+        data: pagamento.dataPagamento,
+        descricao: `Pagamento: ${pagamento.descricao}`,
+        valor: pagamento.valor,
+        tipo: 'debito',
+        categoria: 'Pagamento',
+        origem: 'pagamento',
+        referenciaId: newPagamento.id,
+        numeroDocumento: pagamento.numeroDocumento,
+        empresaId: despesa.empresaId,
+        fornecedorId: despesa.fornecedorId
+      })
+    } else {
+      console.warn('⚠️ [registrarPagamento] Despesa não encontrada para pagamento', pagamento.despesaId)
+    }
 
-    // Criar lançamento no sistema com dados enriched
-    this.criarLancamentoSistema({
-      data: pagamento.dataPagamento,
-      descricao: `Pagamento: ${pagamento.descricao}`,
-      valor: pagamento.valor,
-      tipo: 'debito',
-      categoria: 'Pagamento',
-      origem: 'pagamento',
-      referenciaId: newPagamento.id,
-      numeroDocumento: pagamento.numeroDocumento,
-      empresaId: despesa?.empresaId,
-      fornecedorId: despesa?.fornecedorId
-    })
+    // Criar lançamento no sistema com dados enriquecidos (caso despesa não encontrada above, não criará)
+    if (despesa) {
+      this.criarLancamentoSistema({
+        data: pagamento.dataPagamento,
+        descricao: `Pagamento: ${pagamento.descricao}`,
+        valor: pagamento.valor,
+        tipo: 'debito',
+        categoria: 'Pagamento',
+        origem: 'pagamento',
+        referenciaId: newPagamento.id,
+        numeroDocumento: pagamento.numeroDocumento,
+        empresaId: despesa?.empresaId,
+        fornecedorId: despesa?.fornecedorId
+      })
+    }
 
     return newPagamento
   }
@@ -987,24 +1006,6 @@ class FinancialDataService {
     
     this.saveToStorage('conciliacoes', filtered)
     return true
-  }
-
-  // Categorias
-  getCategorias(): Categoria[] {
-    return this.loadFromStorage('categorias', [])
-  }
-
-  saveCategoria(categoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>): Categoria {
-    const categorias = this.getCategorias()
-    const newCategoria: Categoria = {
-      ...categoria,
-      id: this.generateUniqueId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-    categorias.push(newCategoria)
-    this.saveToStorage('categorias', categorias)
-    return newCategoria
   }
 
   // Receitas
