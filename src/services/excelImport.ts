@@ -361,22 +361,6 @@ export class ExcelImportService {
       }
     });
   }
-    return data.map((row, index) => {
-      try {
-        return {
-          id: row.id || `rec_${Date.now()}_${index}`,
-          descricao: row.descricao || row.description || '',
-          valor: parseFloat(row.valor || row.value || '0') || 0,
-          dataRecebimento: this.parseDate(row.dataRecebimento || row.receiptDate || row.data_recebimento),
-          categoriaId: row.categoriaId || row.categoryId || row.categoria_id || '',
-          status: row.status || 'pendente',
-          observacoes: row.observacoes || row.notes || row.observations || ''
-        };
-      } catch (error) {
-        throw new Error(`Erro na linha ${index + 1} de receitas: ${error}`);
-      }
-    });
-  }
 
   private parseDate(dateValue: unknown): string {
     if (!dateValue) return '';
