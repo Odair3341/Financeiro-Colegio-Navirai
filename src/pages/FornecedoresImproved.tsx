@@ -54,7 +54,7 @@ const FornecedoresImproved = () => {
   }, [])
 
   const loadFornecedores = () => {
-    const fornecedoresData = financialDataService.getFornecedores()
+    const fornecedoresData = financialDataService.getFornecedoresSync()
     setFornecedores(fornecedoresData)
   }
 

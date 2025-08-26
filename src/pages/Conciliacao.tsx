@@ -112,7 +112,7 @@ const Conciliacao = () => {
         return dataLanc >= dataIni && dataLanc <= dataFim;
       });
     const empresas = financialDataService.getEmpresas();
-    const fornecedores = financialDataService.getFornecedores();
+    const fornecedores = financialDataService.getFornecedoresSync();
     
     console.log('DEBUG: Lançamentos carregados:', lancamentosReais.length);
     console.log('DEBUG: Empresas:', empresas.length);

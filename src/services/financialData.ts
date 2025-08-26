@@ -1077,7 +1077,7 @@ class FinancialDataService {
   // Remove duplicatas em fornecedores e despesas e mantém referências
   removeDuplicates(): { removedFornecedores: number; removedDespesas: number } {
     // Fornecedores: documento (apenas dígitos) ou nome normalizado
-    const fornecedores = this.getFornecedores()
+    const fornecedores = this.getFornecedoresSync()
 
     const keyForFornecedor = (f: Fornecedor) => {
       const keyDoc = this.onlyDigits(f.documento)

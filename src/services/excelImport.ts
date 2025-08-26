@@ -56,7 +56,7 @@ export class ExcelImportService {
     }
   }
 
-  private async parseExcelFile(file: File): Promise<ExcelData> {
+  public async parseExcelFile(file: File): Promise<ExcelData> {
     console.log('📖 ExcelImportService: Iniciando leitura do arquivo Excel');
     return new Promise((resolve, reject) => {
       const reader = new FileReader();

@@ -58,12 +58,12 @@ const Recebimentos = () => {
     carregarDados();
   }, []);
 
-  const carregarDados = () => {
+  const carregarDados = async () => {
     const contas = financialDataService.getContasBancarias();
     setContasBancarias(contas);
     
-    // Carregar fornecedores como clientes
-    const fornecedores = financialDataService.getFornecedores();
+    // Carregar fornecedores como clientes - usar função síncrona
+    const fornecedores = financialDataService.getFornecedoresSync() || [];
     setClientes(fornecedores);
     
     const lancamentos = financialDataService.getLancamentosSistema();

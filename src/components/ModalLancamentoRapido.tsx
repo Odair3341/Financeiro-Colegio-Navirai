@@ -89,7 +89,7 @@ const ModalLancamentoRapido = ({ movimentacao, onSalvo }: ModalLancamentoRapidoP
   const carregarDados = async () => {
     try {
       // Carregar fornecedores, categorias e empresas do serviço correto
-      const fornecedoresData = financialDataService.getFornecedores().filter(f => f.ativo);
+      const fornecedoresData = financialDataService.getFornecedoresSync().filter(f => f.ativo);
       const categoriasData = getCategorias();
       const empresasData = financialDataService.getEmpresas().filter(e => e.ativo);
       
