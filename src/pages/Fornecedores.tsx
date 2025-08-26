@@ -145,7 +145,7 @@ const Fornecedores = () => {
       .trim()
   }
 
-  const fornecedoresFiltrados = fornecedores.filter(fornecedor => {
+  const fornecedoresFiltrados = Array.isArray(fornecedores) ? fornecedores.filter(fornecedor => {
     const matchTipo = filtroTipo === "todos" || fornecedor.tipo === filtroTipo
     
     if (!buscaFornecedor.trim()) {
@@ -159,11 +159,11 @@ const Fornecedores = () => {
       normalizeText(fornecedor.email || "").includes(termoBusca)
     
     return matchTipo && matchBusca
-  })
+  }) : []
 
-  const fornecedoresAtivos = fornecedores.filter(f => f.ativo).length
-  const fornecedoresPJ = fornecedores.filter(f => f.tipo === 'pj').length
-  const fornecedoresPF = fornecedores.filter(f => f.tipo === 'pf').length
+  const fornecedoresAtivos = Array.isArray(fornecedores) ? fornecedores.filter(f => f.ativo).length : 0
+  const fornecedoresPJ = Array.isArray(fornecedores) ? fornecedores.filter(f => f.tipo === 'pj').length : 0
+  const fornecedoresPF = Array.isArray(fornecedores) ? fornecedores.filter(f => f.tipo === 'pf').length : 0
 
   return (
     <div className="space-y-6 p-6">

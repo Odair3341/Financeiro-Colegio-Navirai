@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+import * as XLSX from 'xlsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
@@ -17,6 +18,9 @@ import {
   XCircle
 } from 'lucide-react';
 import { ExcelImportService } from '../services/excelImport';
+
+// Criar instância do serviço
+const excelImportService = new ExcelImportService();
 
 interface AbaInfo {
   nome: string;
@@ -49,8 +53,12 @@ const ImportacaoExcel: React.FC = () => {
     setResultadoImportacao(null);
 
     try {
-      console.log('Analisando arquivo:', file.name);
-      const workbook = await ExcelImportService.parseExcelFile(file);
+      console.log('📁 ImportacaoExcel: Analisando arquivo:', {
+        nome: file.name,
+        tamanho: file.size,
+        tipo: file.type
+      });
+      const workbook = await excelImportService.parseExcelFile(file);
       
       const abasInfo: AbaInfo[] = workbook.SheetNames.map(sheetName => {
         const worksheet = workbook.Sheets[sheetName];
@@ -60,7 +68,7 @@ const ImportacaoExcel: React.FC = () => {
         let colunas = 0;
         
         if (range) {
-          const decoded = ExcelImportService.utils.decode_range(range);
+          const decoded = XLSX.utils.decode_range(range);
           registros = Math.max(0, decoded.e.r - decoded.s.r);
           colunas = decoded.e.c - decoded.s.c + 1;
         }
@@ -83,7 +91,16 @@ const ImportacaoExcel: React.FC = () => {
       });
       
       setAbas(abasInfo);
-      console.log('Abas identificadas:', abasInfo);
+      console.log('📊 ImportacaoExcel: Abas identificadas:', {
+        totalAbas: abasInfo.length,
+        abas: abasInfo.map(aba => ({
+          nome: aba.nome,
+          tipo: aba.tipo,
+          registros: aba.registros,
+          colunas: aba.colunas,
+          ativa: aba.ativa
+        }))
+      });
     } catch (error) {
       console.error('Erro ao analisar arquivo:', error);
       alert('Erro ao analisar o arquivo Excel. Verifique se o arquivo está correto.');
@@ -104,23 +121,56 @@ const ImportacaoExcel: React.FC = () => {
     setStatusAtual('Iniciando importação...');
 
     try {
-      const abasSelecionadas = abas.filter(aba => aba.ativa).map(aba => aba.nome);
+      console.log('🚀 ImportacaoExcel: Iniciando importação do arquivo:', {
+        nome: arquivo.name,
+        tamanho: arquivo.size,
+        tipo: arquivo.type,
+        ultimaModificacao: arquivo.lastModified
+      });
       
-      const resultado = await ExcelImportService.importData(
-        arquivo,
-        abasSelecionadas,
-        (progresso, status) => {
-          setProgresso(progresso);
-          setStatusAtual(status);
-        }
-      );
+      // Verificar se o arquivo é válido
+      if (arquivo.size === 0) {
+        throw new Error('Arquivo está vazio');
+      }
+      
+      if (!arquivo.name.match(/\.(xlsx|xls|csv)$/i)) {
+        throw new Error('Formato de arquivo não suportado. Use .xlsx, .xls ou .csv');
+      }
+      
+      const abasSelecionadas = abas.filter(aba => aba.ativa).map(aba => aba.nome);
+      console.log('📋 ImportacaoExcel: Abas selecionadas para importação:', abasSelecionadas);
+      
+      console.log('✅ ImportacaoExcel: Arquivo validado, iniciando processamento...');
+      const resultado = await excelImportService.importFromFile(arquivo);
+      console.log('📊 ImportacaoExcel: Resultado da importação:', {
+        success: resultado.success,
+        message: resultado.message,
+        imported: resultado.imported,
+        errorsCount: resultado.errors?.length || 0,
+        errors: resultado.errors
+      });
 
-      setResultadoImportacao(resultado);
+      // Converter o resultado para o formato esperado pelo componente
+      const resultadoFormatado = {
+        sucesso: resultado.success,
+        erro: resultado.success ? undefined : resultado.message,
+        categorias: resultado.imported.categorias,
+        fornecedores: resultado.imported.fornecedores,
+        contasBancarias: resultado.imported.contasBancarias,
+        despesas: resultado.imported.despesas,
+        receitas: resultado.imported.receitas
+      };
+
+      setResultadoImportacao(resultadoFormatado);
       setImportacaoConcluida(true);
-      setStatusAtual('Importação concluída com sucesso!');
+      setStatusAtual(resultado.success ? 'Importação concluída com sucesso!' : resultado.message);
       
     } catch (error) {
-      console.error('Erro durante importação:', error);
+      console.error('❌ ImportacaoExcel: Erro durante importação:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       setStatusAtual('Erro durante a importação: ' + (error as Error).message);
       setResultadoImportacao({
         sucesso: false,

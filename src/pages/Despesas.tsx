@@ -96,9 +96,9 @@ const Despesas = () => {
 
   const calcularTotais = () => {
     const receitas = 0;
-    const totalDespesas = despesas.reduce((acc, despesa) => acc + (despesa.valor || 0), 0);
-    const pendentes = despesas.filter(d => d.status === 'pendente').reduce((acc, despesa) => acc + (despesa.valor || 0), 0);
-    const conciliados = despesas.filter(d => d.conciliado).reduce((acc, despesa) => acc + (despesa.valor || 0), 0);
+    const totalDespesas = Array.isArray(despesas) ? despesas.reduce((acc, despesa) => acc + (despesa.valor || 0), 0) : 0;
+    const pendentes = Array.isArray(despesas) ? despesas.filter(d => d.status === 'pendente').reduce((acc, despesa) => acc + (despesa.valor || 0), 0) : 0;
+    const conciliados = Array.isArray(despesas) ? despesas.filter(d => d.conciliado).reduce((acc, despesa) => acc + (despesa.valor || 0), 0) : 0;
     const naoConciliados = totalDespesas - conciliados;
     
     return {

@@ -29,18 +29,37 @@ export class ExcelImportService {
   }
 
   async importFromFile(file: File): Promise<ExcelImportResult> {
-    console.log('🔍 ExcelImportService: Iniciando importação do arquivo:', file.name);
     try {
-      console.log('📊 ExcelImportService: Parseando arquivo Excel...');
-      const data = await this.parseExcelFile(file);
-      console.log('✅ ExcelImportService: Arquivo parseado com sucesso:', data);
+      console.log('📁 ExcelImport: Iniciando importação do arquivo:', {
+        nome: file.name,
+        tamanho: file.size,
+        tipo: file.type,
+        ultimaModificacao: new Date(file.lastModified).toLocaleString()
+      });
       
-      console.log('💾 ExcelImportService: Iniciando importação dos dados...');
-      const result = await this.importData(data);
-      console.log('🎉 ExcelImportService: Importação concluída:', result);
-      return result;
+      console.log('🔄 ExcelImport: Fazendo parse do arquivo Excel...');
+      const data = await this.parseExcelData(file);
+      console.log('✅ ExcelImport: Parse do arquivo concluído');
+      
+      console.log('📊 ExcelImport: Dados extraídos:', {
+        categorias: data.categorias?.length || 0,
+        fornecedores: data.fornecedores?.length || 0,
+        contasBancarias: data.contasBancarias?.length || 0,
+        despesas: data.despesas?.length || 0,
+        receitas: data.receitas?.length || 0
+      });
+      
+      console.log('🔄 ExcelImport: Iniciando importação dos dados...');
+      const resultado = await this.importData(data);
+      console.log('✅ ExcelImport: Importação concluída:', resultado);
+      
+      return resultado;
     } catch (error) {
-      console.error('❌ ExcelImportService: Erro durante importação:', error);
+      console.error('❌ ExcelImport: Erro na importação:', {
+        error: error,
+        message: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined
+      });
       return {
         success: false,
         message: `Erro ao processar arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -56,8 +75,36 @@ export class ExcelImportService {
     }
   }
 
-  public async parseExcelFile(file: File): Promise<ExcelData> {
+  public async parseExcelFile(file: File): Promise<XLSX.WorkBook> {
     console.log('📖 ExcelImportService: Iniciando leitura do arquivo Excel');
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          console.log('🔄 ExcelImportService: Convertendo arquivo para workbook...');
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          console.log('📋 ExcelImportService: Abas encontradas:', workbook.SheetNames);
+          console.log('🎯 ExcelImportService: Parse completo, workbook criado');
+          resolve(workbook);
+        } catch (error) {
+          console.error('❌ ExcelImportService: Erro durante parse:', error);
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('❌ ExcelImportService: Erro ao ler arquivo');
+        reject(new Error('Erro ao ler arquivo'));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  private async parseExcelData(file: File): Promise<ExcelData> {
+    console.log('📖 ExcelImportService: Iniciando leitura do arquivo Excel para dados');
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
@@ -76,8 +123,13 @@ export class ExcelImportService {
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             console.log(`📊 ExcelImportService: Dados da aba '${sheetName}':`, jsonData.length, 'registros');
+            console.log(`🔍 ExcelImportService: Primeira linha da aba '${sheetName}':`, jsonData[0] || 'Nenhuma linha encontrada');
+            console.log(`📝 ExcelImportService: Colunas da aba '${sheetName}':`, jsonData.length > 0 ? Object.keys(jsonData[0]) : []);
             
-            switch (sheetName.toLowerCase()) {
+            const normalizedSheetName = sheetName.toLowerCase().replace(/[\s_-]/g, '');
+            console.log(`🏷️ ExcelImportService: Nome normalizado da aba: '${normalizedSheetName}'`);
+            
+            switch (normalizedSheetName) {
               case 'categorias':
                 console.log('🏷️ ExcelImportService: Parseando categorias...');
                 excelData.categorias = this.parseCategorias(jsonData);
@@ -88,7 +140,7 @@ export class ExcelImportService {
                 excelData.fornecedores = this.parseFornecedores(jsonData);
                 console.log('✅ ExcelImportService: Fornecedores parseados:', excelData.fornecedores?.length);
                 break;
-              case 'contas_bancarias':
+              case 'contasbancarias':
               case 'contas':
                 console.log('🏦 ExcelImportService: Parseando contas bancárias...');
                 excelData.contasBancarias = this.parseContasBancarias(jsonData);
@@ -105,7 +157,7 @@ export class ExcelImportService {
                 console.log('✅ ExcelImportService: Receitas parseadas:', excelData.receitas?.length);
                 break;
               default:
-                console.log(`⚠️ ExcelImportService: Aba '${sheetName}' não reconhecida, ignorando...`);
+                console.log(`⚠️ ExcelImportService: Aba '${sheetName}' (normalizada: '${normalizedSheetName}') não reconhecida, ignorando...`);
             }
           });
           

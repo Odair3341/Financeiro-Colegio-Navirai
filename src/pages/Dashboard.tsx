@@ -51,8 +51,8 @@ const Dashboard = () => {
   const loadDashboardData = () => {
     try {
       // Usar dados do Neon se disponível, senão usar localStorage/mock
-      const totalDespesas = despesas.despesas ? despesas.despesas.reduce((acc: number, despesa: { valor: number }) => acc + despesa.valor, 0) : 0;
-      const totalReceitas = receitas.receitas ? receitas.receitas.reduce((acc: number, receita: { valor: number }) => acc + receita.valor, 0) : 0;
+      const totalDespesas = (despesas?.despesas && Array.isArray(despesas.despesas)) ? despesas.despesas.reduce((acc: number, despesa: { valor: number }) => acc + despesa.valor, 0) : 0;
+      const totalReceitas = (receitas?.receitas && Array.isArray(receitas.receitas)) ? receitas.receitas.reduce((acc: number, receita: { valor: number }) => acc + receita.valor, 0) : 0;
       
       // Dados mock para contas bancárias (até integrar com Neon)
       const saldoBancario = 15420.50; // Dados simulados
@@ -60,7 +60,7 @@ const Dashboard = () => {
       
       // Cálculos baseados nos dados reais
       const pendentes = totalDespesas * 0.3; // 30% pendente
-      const totalMovimentacoes = (despesas.despesas?.length || 0) + (receitas.receitas?.length || 0) + 20; // +20 para simular outras movimentações
+      const totalMovimentacoes = ((despesas?.despesas && Array.isArray(despesas.despesas)) ? despesas.despesas.length : 0) + ((receitas?.receitas && Array.isArray(receitas.receitas)) ? receitas.receitas.length : 0) + 20; // +20 para simular outras movimentações
       const conciliadas = Math.floor(totalMovimentacoes * 0.7); // 70% conciliadas
       const pendentesConc = totalMovimentacoes - conciliadas;
       const discrepancias = Math.floor(totalMovimentacoes * 0.05); // 5% com discrepância

@@ -341,24 +341,24 @@ const Conciliacao = () => {
     });
   };
 
-  const movimentacoesFiltradas = movimentacoesBanco.filter(mov => {
+  const movimentacoesFiltradas = Array.isArray(movimentacoesBanco) ? movimentacoesBanco.filter(mov => {
     // Filtrar por conta selecionada
     const contaFiltro = contaSelecionada === "all" || mov.contaBancariaId === contaSelecionada;
     
     if (statusFiltro === "conciliados") return mov.conciliado && contaFiltro;
     if (statusFiltro === "pendentes") return !mov.conciliado && contaFiltro;
     return contaFiltro;
-  });
+  }) : [];
 
-  const lancamentosFiltrados = lancamentosSistema.filter(lanc => {
+  const lancamentosFiltrados = Array.isArray(lancamentosSistema) ? lancamentosSistema.filter(lanc => {
     if (statusFiltro === "conciliados") return lanc.conciliado;
     if (statusFiltro === "pendentes") return !lanc.conciliado;
     return true;
-  });
+  }) : [];
 
-  const totalConciliado = movimentacoesBanco.filter(mov => mov.conciliado).reduce((sum, mov) => sum + Math.abs(mov.valor), 0);
-  const totalPendente = movimentacoesBanco.filter(mov => !mov.conciliado).reduce((sum, mov) => sum + Math.abs(mov.valor), 0);
-  const taxaConciliacao = ((movimentacoesBanco.filter(mov => mov.conciliado).length / movimentacoesBanco.length) * 100).toFixed(1);
+  const totalConciliado = Array.isArray(movimentacoesBanco) ? movimentacoesBanco.filter(mov => mov.conciliado).reduce((sum, mov) => sum + Math.abs(mov.valor), 0) : 0;
+  const totalPendente = Array.isArray(movimentacoesBanco) ? movimentacoesBanco.filter(mov => !mov.conciliado).reduce((sum, mov) => sum + Math.abs(mov.valor), 0) : 0;
+  const taxaConciliacao = Array.isArray(movimentacoesBanco) && movimentacoesBanco.length > 0 ? ((movimentacoesBanco.filter(mov => mov.conciliado).length / movimentacoesBanco.length) * 100).toFixed(1) : '0.0'
 
   return (
     <div className="min-h-screen bg-background p-6">

@@ -1,0 +1,11 @@
+nome,tipo,descricao
+Alimentação,despesa,Gastos com alimentação
+Transporte,despesa,Gastos com transporte
+Salário,receita,Receita de salário
+Freelance,receita,Receita de trabalhos freelance
+Lazer,despesa,Gastos com entretenimento
+Saúde,despesa,Gastos com saúde e medicamentos
+Educação,despesa,Gastos com educação e cursos
+Moradia,despesa,Gastos com aluguel e contas da casa
+Investimentos,receita,Receita de investimentos
+Vendas,receita,Receita de vendas de produtos
