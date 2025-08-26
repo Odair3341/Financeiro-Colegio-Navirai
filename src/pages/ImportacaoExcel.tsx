@@ -149,6 +149,8 @@ const ImportacaoExcel = () => {
     
     const abasAtivas = abas.filter(aba => aba.ativa);
     const totalAbas = abasAtivas.length;
+    let totalProcessados = 0;
+    let totalErros = 0;
     
     try {
       // Importação real dos dados
@@ -161,103 +163,118 @@ const ImportacaoExcel = () => {
         
         if (aba.dados && aba.dados.length > 0) {
           // Processar TODOS os dados reais da planilha (sem limite)
-          for (const linha of aba.dados) {
-            // Extrair campos usando os nomes exatos da planilha
-            const nomeFornecedor = linha['FORNECEDOR'] || linha['CLIENTE'] || '';
-            const descricao = linha['DESCRIÇÃO'] || linha['DESCRIÇÃO '] || '';
-            const obs1 = linha['OBS 1'] || '';
-            const grupo = linha['GRUPO'] || '';
-            const vencimento = linha['VENCIMENTO'] || '';
-            const dataPagamento = linha['DATA PAGAMENTO'] || '';
-            const valorStr = linha['VALOR'] || '';
-            const empresa = linha['EMPRESA'] || linha['OBS 2'] || '';
-            const situacao = linha['SITUAÇÃO'] || '';
-            
-            // Processar valor - remover formatação brasileira
-            let valor = 0;
-            if (valorStr && typeof valorStr === 'string') {
-              const valorLimpo = valorStr.replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
-              valor = parseFloat(valorLimpo) || 0;
-            } else if (typeof valorStr === 'number') {
-              valor = valorStr;
-            }
-            
-            // Processar data de vencimento
-            let dataVencimento = '';
-            if (vencimento) {
-              if (typeof vencimento === 'number') {
-                // Data do Excel (número serial)
-                const date = new Date((vencimento - 25569) * 86400 * 1000);
-                dataVencimento = date.toISOString().split('T')[0];
-              } else if (typeof vencimento === 'string') {
-                // Tentar parsear string de data
-                const parts = vencimento.split('/');
-                if (parts.length === 3) {
-                  const dia = parts[0].padStart(2, '0');
-                  const mes = parts[1].padStart(2, '0');
-                  const ano = parts[2].length === 2 ? '20' + parts[2] : parts[2];
-                  dataVencimento = `${ano}-${mes}-${dia}`;
+          for (let linhaIndex = 0; linhaIndex < aba.dados.length; linhaIndex++) {
+            try {
+              const linha = aba.dados[linhaIndex];
+              
+              // Verificar se a linha tem dados válidos
+              if (!linha || typeof linha !== 'object') {
+                console.warn(`Linha ${linhaIndex + 1} da aba ${aba.nome} é inválida, pulando...`);
+                continue;
+              }
+              
+              // Extrair campos usando os nomes exatos da planilha
+              const nomeFornecedor = linha['FORNECEDOR'] || linha['CLIENTE'] || '';
+              const descricao = linha['DESCRIÇÃO'] || linha['DESCRIÇÃO '] || '';
+              const obs1 = linha['OBS 1'] || '';
+              const grupo = linha['GRUPO'] || '';
+              const vencimento = linha['VENCIMENTO'] || '';
+              const dataPagamento = linha['DATA PAGAMENTO'] || '';
+              const valorStr = linha['VALOR'] || '';
+              const empresa = linha['EMPRESA'] || linha['OBS 2'] || '';
+              const situacao = linha['SITUAÇÃO'] || '';
+              
+              // Processar valor - remover formatação brasileira
+              let valor = 0;
+              if (valorStr && typeof valorStr === 'string') {
+                const valorLimpo = valorStr.replace(/[R$\s]/g, '').replace('.', '').replace(',', '.');
+                valor = parseFloat(valorLimpo) || 0;
+              } else if (typeof valorStr === 'number') {
+                valor = valorStr;
+              }
+              
+              // Processar data de vencimento
+              let dataVencimento = '';
+              if (vencimento) {
+                if (typeof vencimento === 'number') {
+                  // Data do Excel (número serial)
+                  const date = new Date((vencimento - 25569) * 86400 * 1000);
+                  dataVencimento = date.toISOString().split('T')[0];
+                } else if (typeof vencimento === 'string') {
+                  // Tentar parsear string de data
+                  const parts = vencimento.split('/');
+                  if (parts.length === 3) {
+                    const dia = parts[0].padStart(2, '0');
+                    const mes = parts[1].padStart(2, '0');
+                    const ano = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                    dataVencimento = `${ano}-${mes}-${dia}`;
+                  }
                 }
               }
-            }
-            
-            // Gerar documento fictício se não existir
-            const documento = `${Math.floor(Math.random() * 90000000000) + 10000000000}/0001-${Math.floor(Math.random() * 90) + 10}`;
-            
-            // Só processar se tiver fornecedor e valor válido
-            if (nomeFornecedor && String(nomeFornecedor).trim() && valor > 0) {
-              // Verificar se fornecedor já existe
-              const fornecedoresExistentes = financialDataService.getFornecedores();
-              let fornecedor = fornecedoresExistentes.find(f => 
-                f.nome.toLowerCase() === String(nomeFornecedor).toLowerCase().trim()
-              );
               
-              if (!fornecedor) {
-                // Criar novo fornecedor com dados reais
-                fornecedor = financialDataService.saveFornecedor({
-                  nome: String(nomeFornecedor).trim(),
-                  documento: documento,
-                  tipo: 'pj',
-                  email: `${String(nomeFornecedor).toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@email.com`,
-                  telefone: `(67) ${Math.floor(Math.random() * 90000) + 10000}-${Math.floor(Math.random() * 9000) + 1000}`,
-                  ativo: true
+              // Gerar documento fictício se não existir
+              const documento = `${Math.floor(Math.random() * 90000000000) + 10000000000}/0001-${Math.floor(Math.random() * 90) + 10}`;
+              
+              // Só processar se tiver fornecedor e valor válido
+              if (nomeFornecedor && String(nomeFornecedor).trim() && valor > 0) {
+                // Verificar se fornecedor já existe
+                const fornecedoresExistentes = financialDataService.getFornecedores();
+                let fornecedor = fornecedoresExistentes.find(f => 
+                  f.nome.toLowerCase() === String(nomeFornecedor).toLowerCase().trim()
+                );
+                
+                if (!fornecedor) {
+                  // Criar novo fornecedor com dados reais
+                  fornecedor = financialDataService.saveFornecedor({
+                    nome: String(nomeFornecedor).trim(),
+                    documento: documento,
+                    tipo: 'pj',
+                    email: `${String(nomeFornecedor).toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '')}@email.com`,
+                    telefone: `(67) ${Math.floor(Math.random() * 90000) + 10000}-${Math.floor(Math.random() * 9000) + 1000}`,
+                    ativo: true
+                  });
+                }
+                
+                // Determinar categoria baseada no grupo
+                let categoria = 'Diversos';
+                if (grupo) {
+                  const grupoLower = String(grupo).toLowerCase();
+                  if (grupoLower.includes('despesas fixas')) categoria = 'Despesas Fixas';
+                  else if (grupoLower.includes('encargos')) categoria = 'Encargos';
+                  else if (grupoLower.includes('folha')) categoria = 'Folha de Pagamento';
+                  else if (grupoLower.includes('impostos')) categoria = 'Impostos';
+                  else if (grupoLower.includes('pro-labore')) categoria = 'Pró-labore';
+                  else if (grupoLower.includes('mensalidades')) categoria = 'Receitas';
+                  else categoria = String(grupo);
+                }
+                
+                // Determinar status baseado na situação
+                let status: 'pendente' | 'pago_parcial' | 'pago_total' | 'vencido' = 'pendente';
+                if (situacao && String(situacao).toLowerCase().includes('pago')) {
+                  status = 'pago_total';
+                }
+                
+                // Criar despesa (não há receitas no serviço atual)
+                financialDataService.saveDespesa({
+                  empresaId: '1', // Usar empresa padrão por enquanto - TODO: adicionar seleção
+                  fornecedorId: fornecedor.id,
+                  descricao: String(descricao).trim() || String(nomeFornecedor).trim(),
+                  valor: valor,
+                  vencimento: dataVencimento || new Date().toISOString().split('T')[0],
+                  categoria: categoria,
+                  status: status,
+                  valorPago: status === 'pago_total' ? valor : 0,
+                  numeroDocumento: obs1 ? String(obs1) : `DESP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  observacoes: `Empresa: ${empresa} | Obs: ${obs1}`
                 });
               }
-              
-              // Determinar categoria baseada no grupo
-              let categoria = 'Diversos';
-              if (grupo) {
-                const grupoLower = String(grupo).toLowerCase();
-                if (grupoLower.includes('despesas fixas')) categoria = 'Despesas Fixas';
-                else if (grupoLower.includes('encargos')) categoria = 'Encargos';
-                else if (grupoLower.includes('folha')) categoria = 'Folha de Pagamento';
-                else if (grupoLower.includes('impostos')) categoria = 'Impostos';
-                else if (grupoLower.includes('pro-labore')) categoria = 'Pró-labore';
-                else if (grupoLower.includes('mensalidades')) categoria = 'Receitas';
-                else categoria = String(grupo);
-              }
-              
-              // Determinar status baseado na situação
-              let status: 'pendente' | 'pago_parcial' | 'pago_total' | 'vencido' = 'pendente';
-              if (situacao && String(situacao).toLowerCase().includes('pago')) {
-                status = 'pago_total';
-              }
-              
-              // Criar despesa (não há receitas no serviço atual)
-              financialDataService.saveDespesa({
-                empresaId: '1', // Usar empresa padrão por enquanto - TODO: adicionar seleção
-                fornecedorId: fornecedor.id,
-                descricao: String(descricao).trim() || String(nomeFornecedor).trim(),
-                valor: valor,
-                vencimento: dataVencimento || new Date().toISOString().split('T')[0],
-                categoria: categoria,
-                status: status,
-                valorPago: status === 'pago_total' ? valor : 0,
-                numeroDocumento: obs1 ? String(obs1) : `DESP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                observacoes: `Empresa: ${empresa} | Obs: ${obs1}`
-              });
+            } catch (linhaError) {
+              console.error(`Erro ao processar linha ${linhaIndex + 1} da aba ${aba.nome}:`, linhaError);
+              totalErros++;
+              // Continua processando as outras linhas
             }
           }
+          totalProcessados += aba.dados.length;
         }
         
         setProgresso(((i + 1) / totalAbas) * 100);
@@ -269,9 +286,17 @@ const ImportacaoExcel = () => {
 
       const { removedFornecedores, removedDespesas } = financialDataService.removeDuplicates();
       
+      let mensagemSucesso = `${abasAtivas.length} abas processadas. ${totalProcessados} registros analisados.`;
+      if (totalErros > 0) {
+        mensagemSucesso += ` ${totalErros} erros encontrados (verifique o console).`;
+      }
+      if (removedFornecedores > 0 || removedDespesas > 0) {
+        mensagemSucesso += ` Duplicatas removidas: ${removedFornecedores} fornecedores e ${removedDespesas} lançamentos.`;
+      }
+      
       toast({
         title: "Importação concluída!",
-        description: `${abasAtivas.length} abas processadas. Duplicatas removidas: ${removedFornecedores} fornecedores e ${removedDespesas} lançamentos.`
+        description: mensagemSucesso
       });
     } catch (error) {
       setImportando(false);

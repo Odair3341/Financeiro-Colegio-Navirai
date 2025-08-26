@@ -123,6 +123,34 @@ export interface Conciliacao {
   createdAt: string
 }
 
+export interface Categoria {
+  id: string
+  nome: string
+  tipo: 'receita' | 'despesa'
+  cor: string
+  ativo: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Receita {
+  id: string
+  descricao: string
+  valor: number
+  data_vencimento: Date
+  data_recebimento?: Date
+  categoria_id?: string
+  fornecedor_id?: string
+  conta_bancaria_id?: string
+  status: 'pendente' | 'recebido' | 'vencido' | 'cancelado'
+  forma_recebimento?: string
+  numero_documento?: string
+  observacoes?: string
+  recorrente: boolean
+  created_at: string
+  updated_at: string
+}
+
 // Dados mock para desenvolvimento
 const mockContasBancarias: ContaBancaria[] = [
   {
@@ -941,6 +969,42 @@ class FinancialDataService {
     
     this.saveToStorage('conciliacoes', filtered)
     return true
+  }
+
+  // Categorias
+  getCategorias(): Categoria[] {
+    return this.loadFromStorage('categorias', [])
+  }
+
+  saveCategoria(categoria: Omit<Categoria, 'id' | 'createdAt' | 'updatedAt'>): Categoria {
+    const categorias = this.getCategorias()
+    const newCategoria: Categoria = {
+      ...categoria,
+      id: this.generateUniqueId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    categorias.push(newCategoria)
+    this.saveToStorage('categorias', categorias)
+    return newCategoria
+  }
+
+  // Receitas
+  getReceitas(): Receita[] {
+    return this.loadFromStorage('receitas', [])
+  }
+
+  saveReceita(receita: Omit<Receita, 'id' | 'created_at' | 'updated_at'>): Receita {
+    const receitas = this.getReceitas()
+    const newReceita: Receita = {
+      ...receita,
+      id: this.generateUniqueId(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    receitas.push(newReceita)
+    this.saveToStorage('receitas', receitas)
+    return newReceita
   }
 
   // Utilidades internas

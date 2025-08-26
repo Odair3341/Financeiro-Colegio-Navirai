@@ -29,10 +29,18 @@ export class ExcelImportService {
   }
 
   async importFromFile(file: File): Promise<ExcelImportResult> {
+    console.log('🔍 ExcelImportService: Iniciando importação do arquivo:', file.name);
     try {
+      console.log('📊 ExcelImportService: Parseando arquivo Excel...');
       const data = await this.parseExcelFile(file);
-      return await this.importData(data);
+      console.log('✅ ExcelImportService: Arquivo parseado com sucesso:', data);
+      
+      console.log('💾 ExcelImportService: Iniciando importação dos dados...');
+      const result = await this.importData(data);
+      console.log('🎉 ExcelImportService: Importação concluída:', result);
+      return result;
     } catch (error) {
+      console.error('❌ ExcelImportService: Erro durante importação:', error);
       return {
         success: false,
         message: `Erro ao processar arquivo: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
@@ -49,48 +57,70 @@ export class ExcelImportService {
   }
 
   private async parseExcelFile(file: File): Promise<ExcelData> {
+    console.log('📖 ExcelImportService: Iniciando leitura do arquivo Excel');
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = (e) => {
         try {
+          console.log('🔄 ExcelImportService: Convertendo arquivo para workbook...');
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: 'array' });
           
+          console.log('📋 ExcelImportService: Abas encontradas:', workbook.SheetNames);
           const excelData: ExcelData = {};
           
           // Processar cada aba do Excel
           workbook.SheetNames.forEach(sheetName => {
+            console.log(`📄 ExcelImportService: Processando aba '${sheetName}'`);
             const worksheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
+            console.log(`📊 ExcelImportService: Dados da aba '${sheetName}':`, jsonData.length, 'registros');
             
             switch (sheetName.toLowerCase()) {
               case 'categorias':
+                console.log('🏷️ ExcelImportService: Parseando categorias...');
                 excelData.categorias = this.parseCategorias(jsonData);
+                console.log('✅ ExcelImportService: Categorias parseadas:', excelData.categorias?.length);
                 break;
               case 'fornecedores':
+                console.log('🏢 ExcelImportService: Parseando fornecedores...');
                 excelData.fornecedores = this.parseFornecedores(jsonData);
+                console.log('✅ ExcelImportService: Fornecedores parseados:', excelData.fornecedores?.length);
                 break;
               case 'contas_bancarias':
               case 'contas':
+                console.log('🏦 ExcelImportService: Parseando contas bancárias...');
                 excelData.contasBancarias = this.parseContasBancarias(jsonData);
+                console.log('✅ ExcelImportService: Contas parseadas:', excelData.contasBancarias?.length);
                 break;
               case 'despesas':
+                console.log('💸 ExcelImportService: Parseando despesas...');
                 excelData.despesas = this.parseDespesas(jsonData);
+                console.log('✅ ExcelImportService: Despesas parseadas:', excelData.despesas?.length);
                 break;
               case 'receitas':
+                console.log('💰 ExcelImportService: Parseando receitas...');
                 excelData.receitas = this.parseReceitas(jsonData);
+                console.log('✅ ExcelImportService: Receitas parseadas:', excelData.receitas?.length);
                 break;
+              default:
+                console.log(`⚠️ ExcelImportService: Aba '${sheetName}' não reconhecida, ignorando...`);
             }
           });
           
+          console.log('🎯 ExcelImportService: Parse completo, dados finais:', excelData);
           resolve(excelData);
         } catch (error) {
+          console.error('❌ ExcelImportService: Erro durante parse:', error);
           reject(error);
         }
       };
       
-      reader.onerror = () => reject(new Error('Erro ao ler arquivo'));
+      reader.onerror = () => {
+        console.error('❌ ExcelImportService: Erro ao ler arquivo');
+        reject(new Error('Erro ao ler arquivo'));
+      };
       reader.readAsArrayBuffer(file);
     });
   }
@@ -211,6 +241,16 @@ export class ExcelImportService {
   }
 
   private async importData(data: ExcelData): Promise<ExcelImportResult> {
+    console.log('💾 ExcelImportService: Iniciando importData com:', data);
+    console.log('🔧 ExcelImportService: Verificando financialDataService:', {
+      service: typeof financialDataService,
+      saveCategoria: typeof financialDataService?.saveCategoria,
+      saveFornecedor: typeof financialDataService?.saveFornecedor,
+      saveContaBancaria: typeof financialDataService?.saveContaBancaria,
+      saveDespesa: typeof financialDataService?.saveDespesa,
+      saveReceita: typeof financialDataService?.saveReceita
+    });
+    
     const result: ExcelImportResult = {
       success: true,
       message: '',
@@ -227,11 +267,16 @@ export class ExcelImportService {
     try {
       // Importar categorias primeiro (dependência para despesas/receitas)
       if (data.categorias && data.categorias.length > 0) {
+        console.log('🏷️ ExcelImportService: Importando', data.categorias.length, 'categorias...');
         for (const categoria of data.categorias) {
           try {
-            await this.dbService.createCategoria(categoria);
+            console.log('➕ ExcelImportService: Adicionando categoria:', categoria);
+            const result_categoria = await financialDataService.saveCategoria(categoria);
+            console.log('✅ ExcelImportService: Categoria adicionada:', result_categoria);
             result.imported.categorias++;
+            console.log('✅ ExcelImportService: Categoria adicionada com sucesso');
           } catch (error) {
+            console.error('❌ ExcelImportService: Erro ao adicionar categoria:', error);
             result.errors.push(`Erro ao importar categoria ${categoria.nome}: ${error}`);
           }
         }
@@ -239,11 +284,15 @@ export class ExcelImportService {
 
       // Importar fornecedores
       if (data.fornecedores && data.fornecedores.length > 0) {
+        console.log('🏢 ExcelImportService: Importando', data.fornecedores.length, 'fornecedores...');
         for (const fornecedor of data.fornecedores) {
           try {
-            await this.dbService.createFornecedor(fornecedor);
+            console.log('➕ ExcelImportService: Adicionando fornecedor:', fornecedor);
+            financialDataService.saveFornecedor(fornecedor);
             result.imported.fornecedores++;
+            console.log('✅ ExcelImportService: Fornecedor adicionado com sucesso');
           } catch (error) {
+            console.error('❌ ExcelImportService: Erro ao adicionar fornecedor:', error);
             result.errors.push(`Erro ao importar fornecedor ${fornecedor.nome}: ${error}`);
           }
         }
@@ -251,11 +300,15 @@ export class ExcelImportService {
 
       // Importar contas bancárias
       if (data.contasBancarias && data.contasBancarias.length > 0) {
+        console.log('🏦 ExcelImportService: Importando', data.contasBancarias.length, 'contas bancárias...');
         for (const conta of data.contasBancarias) {
           try {
-            await this.dbService.createContaBancaria(conta);
+            console.log('➕ ExcelImportService: Adicionando conta bancária:', conta);
+            financialDataService.saveContaBancaria(conta);
             result.imported.contasBancarias++;
+            console.log('✅ ExcelImportService: Conta bancária adicionada com sucesso');
           } catch (error) {
+            console.error('❌ ExcelImportService: Erro ao adicionar conta bancária:', error);
             result.errors.push(`Erro ao importar conta ${conta.nome}: ${error}`);
           }
         }
@@ -263,11 +316,15 @@ export class ExcelImportService {
 
       // Importar despesas
       if (data.despesas && data.despesas.length > 0) {
+        console.log('💸 ExcelImportService: Importando', data.despesas.length, 'despesas...');
         for (const despesa of data.despesas) {
           try {
-            await this.dbService.createDespesa(despesa);
+            console.log('➕ ExcelImportService: Adicionando despesa:', despesa);
+            financialDataService.saveDespesa(despesa);
             result.imported.despesas++;
+            console.log('✅ ExcelImportService: Despesa adicionada com sucesso');
           } catch (error) {
+            console.error('❌ ExcelImportService: Erro ao adicionar despesa:', error);
             result.errors.push(`Erro ao importar despesa ${despesa.descricao}: ${error}`);
           }
         }
@@ -275,11 +332,16 @@ export class ExcelImportService {
 
       // Importar receitas
       if (data.receitas && data.receitas.length > 0) {
+        console.log('💰 ExcelImportService: Importando', data.receitas.length, 'receitas...');
         for (const receita of data.receitas) {
           try {
-            await this.dbService.createReceita(receita);
+            console.log('➕ ExcelImportService: Adicionando receita:', receita);
+            const result_receita = await financialDataService.saveReceita(receita);
+            console.log('✅ ExcelImportService: Receita adicionada:', result_receita);
             result.imported.receitas++;
+            console.log('✅ ExcelImportService: Receita adicionada com sucesso');
           } catch (error) {
+            console.error('❌ ExcelImportService: Erro ao adicionar receita:', error);
             result.errors.push(`Erro ao importar receita ${receita.descricao}: ${error}`);
           }
         }
@@ -287,17 +349,31 @@ export class ExcelImportService {
 
       const totalImported = Object.values(result.imported).reduce((sum, count) => sum + count, 0);
       
+      console.log('📊 ExcelImportService: Resumo da importação:', {
+        categorias: result.imported.categorias,
+        fornecedores: result.imported.fornecedores,
+        contasBancarias: result.imported.contasBancarias,
+        despesas: result.imported.despesas,
+        receitas: result.imported.receitas,
+        totalErros: result.errors.length
+      });
+      
       if (totalImported === 0) {
         result.success = false;
         result.message = 'Nenhum dado foi importado. Verifique o formato do arquivo Excel.';
+        console.log('⚠️ ExcelImportService: Nenhum dado importado');
       } else {
         result.message = `Importação concluída! ${totalImported} registros importados.`;
         if (result.errors.length > 0) {
           result.message += ` ${result.errors.length} erros encontrados.`;
+          console.log('⚠️ ExcelImportService: Importação com erros:', result.errors);
+        } else {
+          console.log('🎉 ExcelImportService: Importação realizada com sucesso!');
         }
       }
 
     } catch (error) {
+      console.error('💥 ExcelImportService: Erro crítico durante importação:', error);
       result.success = false;
       result.message = `Erro durante a importação: ${error instanceof Error ? error.message : 'Erro desconhecido'}`;
       result.errors.push(error instanceof Error ? error.message : 'Erro desconhecido');
