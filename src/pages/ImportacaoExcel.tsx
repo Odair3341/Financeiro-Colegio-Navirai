@@ -245,7 +245,7 @@ const ImportacaoExcel: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <Alert>
+                <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertDescription>
                     {resultadoImportacao.erro || 'Erro desconhecido durante a importação'}
@@ -253,7 +253,23 @@ const ImportacaoExcel: React.FC = () => {
                 </Alert>
               )}
 
-              <div className="flex gap-3">
+              {/* Exibir erros detalhados */}
+              {resultadoImportacao.errors && resultadoImportacao.errors.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="font-bold mb-2 text-sm text-destructive">Detalhes dos Erros:</h4>
+                  <Alert variant="destructive" className="max-h-40 overflow-y-auto">
+                    <ul className="space-y-1">
+                      {resultadoImportacao.errors.map((err, index) => (
+                        <li key={index} className="text-xs font-mono">
+                          - {err}
+                        </li>
+                      ))}
+                    </ul>
+                  </Alert>
+                </div>
+              )}
+
+              <div className="flex gap-3 mt-6">
                 <Button 
                   onClick={() => {
                     setArquivo(null);
